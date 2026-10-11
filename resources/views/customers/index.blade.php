@@ -7,22 +7,24 @@
             <h2 class="text-xl font-bold text-slate-900">Directorio de Clientes</h2>
             <p class="text-xs text-slate-500">Gestión de cartera de clientes y compradores frecuentes</p>
         </div>
-        <a href="{{ route('customers.create') }}" class="inline-flex items-center px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-            + Nuevo Cliente
+        <a href="{{ route('customers.create') }}" class="inline-flex items-center px-3.5 py-2 rounded-md bg-brand-900 hover:bg-brand-800 text-white font-medium text-xs shadow-sm transition-colors">
+            <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+            Nuevo Cliente
         </a>
     </div>
 
     <!-- Search input -->
-    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
-        <form method="GET" action="{{ route('customers.index') }}" class="flex items-center space-x-3">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por Nombre, Documento (DNI/RUT/RFC), Correo o Teléfono..."
-                   class="w-full max-w-lg px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-            <button type="submit" class="py-2 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs transition">
+    <div class="bg-white rounded-lg p-3.5 border border-slate-200 shadow-sm">
+        <form method="GET" action="{{ route('customers.index') }}" class="flex items-center space-x-2.5">
+            <label for="customerSearch" class="sr-only">Buscar clientes</label>
+            <input type="text" id="customerSearch" name="search" value="{{ request('search') }}" placeholder="Buscar por Nombre, Documento (DNI/RUT/RFC), Correo o Teléfono..."
+                   class="w-full max-w-lg px-3 py-1.5 rounded-md border border-slate-300 text-xs focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none transition-colors"
+                   aria-label="Buscar clientes por nombre, documento, correo o teléfono">
+            <button type="submit" class="py-1.5 px-3 rounded-md bg-slate-800 hover:bg-slate-900 text-white font-medium text-xs transition-colors">
                 Buscar
             </button>
             @if(request('search'))
-            <a href="{{ route('customers.index') }}" class="py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold">
+            <a href="{{ route('customers.index') }}" class="py-1.5 px-2.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors">
                 Limpiar
             </a>
             @endif
@@ -30,54 +32,54 @@
     </div>
 
     <!-- Customers Table -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
                     <tr>
-                        <th class="px-5 py-3.5">Cliente / Razón Social</th>
-                        <th class="px-5 py-3.5">Doc. Identidad</th>
-                        <th class="px-5 py-3.5">Contacto</th>
-                        <th class="px-5 py-3.5">Dirección</th>
-                        <th class="px-5 py-3.5 text-center">Compras</th>
-                        <th class="px-5 py-3.5 text-center">Estado</th>
-                        <th class="px-5 py-3.5 text-right">Acciones</th>
+                        <th class="px-4 py-3">Cliente / Razón Social</th>
+                        <th class="px-4 py-3">Doc. Identidad</th>
+                        <th class="px-4 py-3">Contacto</th>
+                        <th class="px-4 py-3">Dirección</th>
+                        <th class="px-4 py-3 text-center">Compras</th>
+                        <th class="px-4 py-3 text-center">Estado</th>
+                        <th class="px-4 py-3 text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($customers as $customer)
-                    <tr class="hover:bg-slate-50/70 transition {{ !$customer->is_active ? 'opacity-60 bg-slate-50/40' : '' }}">
-                        <td class="px-5 py-4 font-bold text-slate-900">
+                    <tr class="hover:bg-slate-50/70 transition-colors {{ !$customer->is_active ? 'opacity-60 bg-slate-50/40' : '' }}">
+                        <td class="px-4 py-3 font-semibold text-slate-900">
                             {{ $customer->name }}
                         </td>
-                        <td class="px-5 py-4 font-mono text-slate-700">
+                        <td class="px-4 py-3 font-mono text-slate-600">
                             {{ $customer->tax_id ?? 'Sin documento' }}
                         </td>
-                        <td class="px-5 py-4">
+                        <td class="px-4 py-3">
                             <span class="text-slate-800 block">{{ $customer->phone ?? 'Sin teléfono' }}</span>
-                            <span class="text-[11px] text-slate-400 block">{{ $customer->email ?? 'Sin correo' }}</span>
+                            <span class="text-[11px] text-slate-500 block">{{ $customer->email ?? 'Sin correo' }}</span>
                         </td>
-                        <td class="px-5 py-4 text-slate-600 max-w-xs truncate">
+                        <td class="px-4 py-3 text-slate-600 max-w-xs truncate">
                             {{ $customer->address ?? 'N/A' }}
                         </td>
-                        <td class="px-5 py-4 text-center">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-700">
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-mono tabular-nums font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                                 {{ $customer->sales_count }}
                             </span>
                         </td>
-                        <td class="px-5 py-4 text-center">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ $customer->is_active ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-500 border border-slate-200' }}">
+                        <td class="px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase {{ $customer->is_active ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-700 border border-slate-300' }}">
                                 {{ $customer->is_active ? 'Activo' : 'Inactivo' }}
                             </span>
                         </td>
-                        <td class="px-5 py-4 text-right space-x-2">
-                            <a href="{{ route('customers.edit', $customer) }}" class="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-700 text-xs font-semibold transition">
+                        <td class="px-4 py-3 text-right space-x-1.5">
+                            <a href="{{ route('customers.edit', $customer) }}" class="inline-flex items-center px-2 py-1 rounded text-slate-700 hover:bg-slate-100 border border-slate-200 text-xs font-medium transition-colors">
                                 Editar
                             </a>
                             <form action="{{ route('customers.toggle-status', $customer) }}" method="POST" class="inline">
                                 @csrf
                                 @method('PATCH')
-                                <button type="submit" class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium {{ $customer->is_active ? 'text-amber-700 hover:bg-amber-50' : 'text-emerald-700 hover:bg-emerald-50' }}">
+                                <button type="submit" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium {{ $customer->is_active ? 'text-amber-800 hover:bg-amber-50 border border-amber-200' : 'text-emerald-800 hover:bg-emerald-50 border border-emerald-200' }} transition-colors">
                                     {{ $customer->is_active ? 'Desactivar' : 'Activar' }}
                                 </button>
                             </form>

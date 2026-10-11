@@ -8,22 +8,24 @@
             <p class="text-xs text-slate-500">Auditoría inmutable de entradas, salidas y ajustes de inventario</p>
         </div>
         @if(auth()->user()->isAdmin())
-        <a href="{{ route('inventory.create') }}" class="inline-flex items-center px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-md shadow-brand-500/20 transition">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-            + Registrar Movimiento Manual
+        <a href="{{ route('inventory.create') }}" class="inline-flex items-center px-4 py-2 rounded-md bg-brand-900 hover:bg-brand-950 text-white font-medium text-xs tracking-wide shadow-sm transition">
+            <svg class="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            Registrar Movimiento Manual
         </a>
         @endif
     </div>
 
     <!-- Filters Card -->
-    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm">
+    <div class="bg-white rounded-lg p-4 border border-slate-200 shadow-sm">
         <form method="GET" action="{{ route('inventory.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por motivo, SKU o producto..."
-                       class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                <label for="inventorySearch" class="sr-only">Buscar por motivo, SKU o producto</label>
+                <input type="text" id="inventorySearch" name="search" value="{{ request('search') }}" placeholder="Buscar por motivo, SKU o producto..."
+                       class="w-full px-3 py-2 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none">
             </div>
             <div>
-                <select name="product_id" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                <label for="inventoryProduct" class="sr-only">Filtrar por producto</label>
+                <select id="inventoryProduct" name="product_id" class="w-full px-3 py-2 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none">
                     <option value="">Todos los Productos</option>
                     @foreach($products as $p)
                     <option value="{{ $p->id }}" {{ request('product_id') == $p->id ? 'selected' : '' }}>
@@ -33,7 +35,8 @@
                 </select>
             </div>
             <div>
-                <select name="type" class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-brand-500 outline-none">
+                <label for="inventoryType" class="sr-only">Filtrar por tipo de movimiento</label>
+                <select id="inventoryType" name="type" class="w-full px-3 py-2 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none">
                     <option value="">Todos los Tipos</option>
                     <option value="in" {{ request('type') === 'in' ? 'selected' : '' }}>Entradas (+ Compra / Ingreso)</option>
                     <option value="out" {{ request('type') === 'out' ? 'selected' : '' }}>Salidas (- Venta / Despacho)</option>
@@ -41,12 +44,12 @@
                 </select>
             </div>
             <div class="flex items-center space-x-2">
-                <button type="submit" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs transition">
+                <button type="submit" class="w-full py-2 px-3 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition">
                     Filtrar
                 </button>
                 @if(request()->hasAny(['search', 'product_id', 'type']))
-                <a href="{{ route('inventory.index') }}" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold" title="Limpiar filtros">
-                    ✕
+                <a href="{{ route('inventory.index') }}" class="p-2 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Limpiar filtros" aria-label="Limpiar filtros">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </a>
                 @endif
             </div>
@@ -54,73 +57,76 @@
     </div>
 
     <!-- Movements Table -->
-    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
+                <thead class="bg-slate-50 border-b border-slate-200 text-slate-700 font-semibold uppercase tracking-wider text-[11px]">
                     <tr>
-                        <th class="px-5 py-3.5">Fecha</th>
-                        <th class="px-5 py-3.5">Producto / SKU</th>
-                        <th class="px-5 py-3.5 text-center">Tipo</th>
-                        <th class="px-5 py-3.5 text-center">Stock Previo</th>
-                        <th class="px-5 py-3.5 text-center">Variación</th>
-                        <th class="px-5 py-3.5 text-center">Nuevo Stock</th>
-                        <th class="px-5 py-3.5">Motivo / Justificación</th>
-                        <th class="px-5 py-3.5">Responsable</th>
+                        <th class="px-4 py-3">Fecha</th>
+                        <th class="px-4 py-3">Producto / SKU</th>
+                        <th class="px-4 py-3 text-center">Tipo</th>
+                        <th class="px-4 py-3 text-center">Stock Previo</th>
+                        <th class="px-4 py-3 text-center">Variación</th>
+                        <th class="px-4 py-3 text-center">Nuevo Stock</th>
+                        <th class="px-4 py-3">Motivo / Justificación</th>
+                        <th class="px-4 py-3">Responsable</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($movements as $m)
-                    <tr class="hover:bg-slate-50/70 transition">
-                        <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-4 py-3 text-slate-600 whitespace-nowrap">
                             {{ $m->created_at->format('d/m/Y H:i') }}
                         </td>
-                        <td class="px-5 py-4">
-                            <span class="font-bold text-slate-900 block">{{ $m->product->name ?? 'Producto eliminado' }}</span>
+                        <td class="px-4 py-3">
+                            <span class="font-semibold text-slate-900 block">{{ $m->product->name ?? 'Producto eliminado' }}</span>
                             <span class="text-[11px] font-mono text-slate-500 block">SKU: {{ $m->product->sku ?? 'N/A' }}</span>
                         </td>
-                        <td class="px-5 py-4 text-center">
+                        <td class="px-4 py-3 text-center">
                             @if($m->type === 'in')
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
-                                🟢 Entrada
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path></svg>
+                                Entrada
                             </span>
                             @elseif($m->type === 'out')
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800">
-                                🔴 Salida
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-rose-50 text-rose-800 border border-rose-200">
+                                <svg class="w-3 h-3 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path></svg>
+                                Salida
                             </span>
                             @else
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800">
-                                🔄 Ajuste
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-800 border border-slate-200">
+                                <svg class="w-3 h-3 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                Ajuste
                             </span>
                             @endif
                         </td>
-                        <td class="px-5 py-4 text-center font-mono font-medium text-slate-600">
+                        <td class="px-4 py-3 text-center font-mono tabular-nums font-medium text-slate-700">
                             {{ $m->previous_stock }}
                         </td>
-                        <td class="px-5 py-4 text-center font-mono font-bold">
+                        <td class="px-4 py-3 text-center font-mono tabular-nums font-semibold">
                             @if($m->type === 'in')
-                            <span class="text-emerald-600">+{{ $m->quantity }}</span>
+                            <span class="text-emerald-700">+{{ $m->quantity }}</span>
                             @elseif($m->type === 'out')
-                            <span class="text-rose-600">-{{ $m->quantity }}</span>
+                            <span class="text-rose-700">-{{ $m->quantity }}</span>
                             @else
-                            <span class="text-indigo-600">±{{ $m->quantity }}</span>
+                            <span class="text-slate-800">±{{ $m->quantity }}</span>
                             @endif
                         </td>
-                        <td class="px-5 py-4 text-center font-mono font-black text-slate-900">
+                        <td class="px-4 py-3 text-center font-mono tabular-nums font-bold text-slate-900">
                             {{ $m->new_stock }}
                         </td>
-                        <td class="px-5 py-4 text-slate-700 max-w-xs">
+                        <td class="px-4 py-3 text-slate-700 max-w-xs">
                             {{ $m->reason }}
                         </td>
-                        <td class="px-5 py-4 text-slate-600 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded text-[11px] bg-slate-100 text-slate-700 font-medium">
+                        <td class="px-4 py-3 text-slate-600 whitespace-nowrap">
+                            <span class="px-2 py-0.5 rounded text-[11px] bg-slate-100 text-slate-700 font-medium border border-slate-200">
                                 {{ $m->user->name ?? 'Sistema' }}
                             </span>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-5 py-10 text-center text-slate-400">
+                        <td colspan="8" class="px-4 py-10 text-center text-slate-400">
                             No se encontraron movimientos de inventario registrados.
                         </td>
                     </tr>
@@ -130,7 +136,7 @@
         </div>
 
         @if($movements->hasPages())
-        <div class="px-5 py-4 border-t border-slate-200 bg-slate-50">
+        <div class="px-4 py-3 border-t border-slate-200 bg-slate-50">
             {{ $movements->links() }}
         </div>
         @endif

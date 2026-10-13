@@ -50,21 +50,33 @@
             </div>
 
             <div class="border-t border-slate-100 pt-4">
-                <h4 class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Precios y Finanzas</h4>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <h4 class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">Precios e Impuestos (PEN - S/)</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label for="cost_price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Precio de Costo ($) <span class="text-rose-500">*</span></label>
+                        <label for="cost_price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Precio de Costo (S/) <span class="text-rose-500">*</span></label>
                         <input type="number" step="0.01" min="0" id="cost_price" name="cost_price" value="{{ old('cost_price', $product->cost_price) }}" required
                                class="w-full px-3 py-2 rounded-md border border-slate-300 font-mono text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none"
                                oninput="calculateMargin()">
                     </div>
 
                     <div>
-                        <label for="sale_price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Precio de Venta ($) <span class="text-rose-500">*</span></label>
+                        <label for="sale_price" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Precio de Venta (S/) <span class="text-rose-500">*</span></label>
                         <input type="number" step="0.01" min="0" id="sale_price" name="sale_price" value="{{ old('sale_price', $product->sale_price) }}" required
                                class="w-full px-3 py-2 rounded-md border border-slate-300 font-mono text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none font-bold text-slate-900"
                                oninput="calculateMargin()">
                         <div id="marginIndicator" class="text-[11px] font-semibold text-slate-500 mt-1">Margen estimado: 0%</div>
+                    </div>
+
+                    <div>
+                        <label for="tax_type" class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Afectación IGV (SUNAT) <span class="text-rose-500">*</span></label>
+                        <select id="tax_type" name="tax_type"
+                                class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none font-medium">
+                            @php $currentTax = old('tax_type', $product->tax_type ?? 'gravado'); @endphp
+                            <option value="gravado" {{ $currentTax === 'gravado' ? 'selected' : '' }}>Gravado (18% IGV)</option>
+                            <option value="exonerado" {{ $currentTax === 'exonerado' ? 'selected' : '' }}>Exonerado (0% - Apéndice I/II)</option>
+                            <option value="inafecto" {{ $currentTax === 'inafecto' ? 'selected' : '' }}>Inafecto (0% - Art. 2 Ley IGV)</option>
+                        </select>
+                        <span class="text-[11px] text-slate-500 mt-1 block">Catálogo N.° 07 de SUNAT.</span>
                     </div>
                 </div>
             </div>
@@ -111,7 +123,7 @@
 
         if (cost > 0 && sale >= cost) {
             const margin = (((sale - cost) / cost) * 100).toFixed(1);
-            indicator.textContent = `Margen estimado: ${margin}% sobre el costo (Ganancia: $${(sale - cost).toFixed(2)})`;
+            indicator.textContent = `Margen estimado: ${margin}% sobre el costo (Diferencia: S/ ${(sale - cost).toFixed(2)})`;
             indicator.className = 'text-[11px] font-semibold text-emerald-700 mt-1';
         } else if (sale < cost) {
             indicator.textContent = 'Advertencia: El precio de venta es menor al costo';

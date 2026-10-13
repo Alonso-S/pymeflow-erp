@@ -69,7 +69,7 @@ class SaleController extends Controller
             );
 
             return redirect()->route('sales.show', $sale)
-                ->with('success', "¡Venta #{$sale->sale_number} completada con éxito por un total de $" . number_format($sale->total, 2) . "!");
+                ->with('success', "¡Venta #{$sale->sale_number} completada con éxito por un total de S/ " . number_format($sale->total, 2) . "!");
         } catch (DomainException $e) {
             return redirect()->back()
                 ->withInput()
@@ -83,8 +83,32 @@ class SaleController extends Controller
 
     public function show(Sale $sale): View
     {
-        $sale->load(['user', 'customer', 'items.product']);
+        $sale->load(['user', 'customer', 'items.product', 'cancelledByUser']);
 
         return view('sales.show', compact('sale'));
+    }
+
+    public function cancel(Request $request, Sale $sale): RedirectResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ], [
+            'reason.required' => 'Debe especificar el motivo de la anulación interna.',
+        ]);
+
+        try {
+            $this->saleService->cancelSale(
+                sale: $sale,
+                user: $request->user(),
+                reason: $validated['reason']
+            );
+
+            return redirect()->route('sales.show', $sale)
+                ->with('success', "La operación #{$sale->sale_number} ha sido anulada internamente y el stock fue restituido al almacén.");
+        } catch (DomainException $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', 'Error al anular la operación: ' . $e->getMessage());
+        }
     }
 }

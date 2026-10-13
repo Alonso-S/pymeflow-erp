@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\PurchaseController;
 use App\Http\Controllers\Api\V1\SaleController;
 use Illuminate\Support\Facades\Route;
 
@@ -53,6 +54,15 @@ Route::prefix('v1')->group(function () {
             // Alta y edición de clientes
             Route::post('/customers', [CustomerController::class, 'store']);
             Route::put('/customers/{id}', [CustomerController::class, 'update']);
+
+            // Anulación interna de ventas en API
+            Route::post('/sales/{id}/cancel', [SaleController::class, 'cancel']);
+
+            // Órdenes de Compra y Recepción de Mercadería
+            Route::get('/purchases', [PurchaseController::class, 'index']);
+            Route::get('/purchases/{id}', [PurchaseController::class, 'show']);
+            Route::post('/purchases', [PurchaseController::class, 'store']);
+            Route::post('/purchases/{id}/receive', [PurchaseController::class, 'receive']);
         });
     });
 });

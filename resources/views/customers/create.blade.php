@@ -23,18 +23,29 @@
                        class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                    <label for="tax_id" class="block text-xs font-bold text-slate-700 uppercase mb-1">Doc. Identidad / DNI / RUT</label>
+                    <label for="document_type" class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo Documento</label>
+                    <select id="document_type" name="document_type"
+                            class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                        <option value="RUC" {{ old('document_type', 'RUC') === 'RUC' ? 'selected' : '' }}>RUC (11 dígitos)</option>
+                        <option value="DNI" {{ old('document_type') === 'DNI' ? 'selected' : '' }}>DNI (8 dígitos)</option>
+                        <option value="CE" {{ old('document_type') === 'CE' ? 'selected' : '' }}>Carné de Extranjería</option>
+                        <option value="PASAPORTE" {{ old('document_type') === 'PASAPORTE' ? 'selected' : '' }}>Pasaporte</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="tax_id" class="block text-xs font-bold text-slate-700 uppercase mb-1">N° RUC / DNI</label>
                     <input type="text" id="tax_id" name="tax_id" value="{{ old('tax_id') }}"
-                           placeholder="Ej. 900123456-7"
-                           class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                           placeholder="Ej. 20601458791 o 45896321"
+                           class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm font-mono focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
                 </div>
 
                 <div>
                     <label for="phone" class="block text-xs font-bold text-slate-700 uppercase mb-1">Teléfono / Celular</label>
                     <input type="text" id="phone" name="phone" value="{{ old('phone') }}"
-                           placeholder="Ej. +57 300 1234567"
+                           placeholder="Ej. +51 987 654 321"
                            class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
                 </div>
             </div>

@@ -51,9 +51,10 @@
                  data-sku="{{ $product->sku }}"
                  data-price="{{ $product->sale_price }}"
                  data-stock="{{ $product->stock }}"
+                 data-tax-type="{{ $product->tax_type ?? 'gravado' }}"
                  data-category="{{ $product->category->name ?? '' }}"
-                 onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', '{{ $product->sku }}', {{ $product->sale_price }}, {{ $product->stock }})"
-                 aria-label="Añadir {{ $product->name }} al carrito. Precio: ${{ number_format($product->sale_price, 2) }}. Stock disponible: {{ $product->stock }}">
+                 onclick="addToCart({{ $product->id }}, '{{ addslashes($product->name) }}', '{{ $product->sku }}', {{ $product->sale_price }}, {{ $product->stock }}, '{{ $product->tax_type ?? 'gravado' }}')"
+                 aria-label="Añadir {{ $product->name }} al carrito. Precio: S/ {{ number_format($product->sale_price, 2) }}. Stock disponible: {{ $product->stock }}">
 
                 <div class="w-full">
                     <div class="flex items-center justify-between text-[11px] font-mono text-slate-500 mb-1">
@@ -65,11 +66,16 @@
                     <h4 class="text-xs font-semibold text-slate-900 group-hover:text-brand-900 group-focus:text-brand-900 line-clamp-2 leading-snug">
                         {{ $product->name }}
                     </h4>
+                    @if(($product->tax_type ?? 'gravado') !== 'gravado')
+                        <span class="inline-block mt-1 px-1.5 py-0.2 rounded text-[9px] font-semibold uppercase bg-amber-50 text-amber-800 border border-amber-200">
+                            {{ $product->tax_type }} (0% IGV)
+                        </span>
+                    @endif
                 </div>
 
                 <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between w-full">
                     <span class="text-sm font-bold text-slate-900 font-mono tabular-nums">
-                        ${{ number_format($product->sale_price, 2) }}
+                        S/ {{ number_format($product->sale_price, 2) }}
                     </span>
                     <span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 group-hover:bg-brand-900 group-focus:bg-brand-900 text-slate-700 group-hover:text-white group-focus:text-white transition">
                         + Añadir
@@ -89,7 +95,7 @@
         <div class="flex items-center justify-between pb-3 border-b border-slate-200">
             <h2 class="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-brand-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-                Carrito de Venta
+                Carrito de Venta (PEN)
             </h2>
             <button type="button" onclick="clearCart()" class="text-xs text-rose-600 hover:text-rose-800 font-medium transition">
                 Vaciar
@@ -99,17 +105,18 @@
         <!-- Actual POST Form submission to SaleController@store -->
         <form id="posCheckoutForm" action="{{ route('sales.store') }}" method="POST" class="flex-1 flex flex-col justify-between overflow-hidden mt-3">
             @csrf
+            <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
 
             <!-- Client Selection & Payment Mode -->
             <div class="space-y-3 pb-3 border-b border-slate-200">
                 <div>
-                    <label for="customer_id" class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Cliente Receptor</label>
+                    <label for="customer_id" class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Cliente Receptor (RUC / DNI)</label>
                     <select id="customer_id" name="customer_id" onchange="toggleCustomerNameInput(this)"
                             class="w-full px-3 py-2 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none">
                         <option value="">Cliente Ocasional (Mostrador)</option>
                         @foreach($customers as $customer)
                         <option value="{{ $customer->id }}" {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                            {{ $customer->name }} ({{ $customer->tax_id ?? 'Sin documento' }})
+                            {{ $customer->name }} ({{ $customer->document_type ?? 'DOC' }}: {{ $customer->tax_id ?? 'S/D' }})
                         </option>
                         @endforeach
                     </select>
@@ -122,20 +129,31 @@
 
                 <div class="grid grid-cols-2 gap-2.5">
                     <div>
-                        <label for="payment_method" class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Método de Pago</label>
+                        <label for="payment_method" class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Medio de Pago</label>
                         <select id="payment_method" name="payment_method" required
                                 class="w-full px-3 py-1.5 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none font-medium">
-                            <option value="efectivo" {{ old('payment_method') === 'efectivo' ? 'selected' : '' }}>Efectivo</option>
+                            <option value="efectivo" {{ old('payment_method') === 'efectivo' ? 'selected' : '' }}>Efectivo (S/)</option>
+                            <option value="yape" {{ old('payment_method') === 'yape' ? 'selected' : '' }}>Yape</option>
+                            <option value="plin" {{ old('payment_method') === 'plin' ? 'selected' : '' }}>Plin</option>
                             <option value="tarjeta" {{ old('payment_method') === 'tarjeta' ? 'selected' : '' }}>Tarjeta Débito / Crédito</option>
                             <option value="transferencia" {{ old('payment_method') === 'transferencia' ? 'selected' : '' }}>Transferencia Bancaria</option>
                         </select>
                     </div>
 
                     <div>
-                        <label for="notes" class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Nota Interna</label>
-                        <input type="text" id="notes" name="notes" placeholder="Ej. Orden #102..."
-                               class="w-full px-3 py-1.5 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none">
+                        <label for="prices_include_tax" class="block text-[11px] font-semibold text-slate-700 uppercase mb-1">Modalidad IGV</label>
+                        <select id="prices_include_tax" name="prices_include_tax" onchange="renderCart()"
+                                class="w-full px-3 py-1.5 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none font-medium">
+                            <option value="1" selected>Precios incluyen IGV (18%)</option>
+                            <option value="0">Precios más IGV (+18%)</option>
+                        </select>
                     </div>
+                </div>
+
+                <div>
+                    <label for="notes" class="sr-only">Nota Interna</label>
+                    <input type="text" id="notes" name="notes" placeholder="Nota u observación interna de la venta..."
+                           class="w-full px-3 py-1.5 rounded-md border border-slate-300 text-xs focus:ring-2 focus:ring-brand-800 focus:border-brand-800 outline-none">
                 </div>
             </div>
 
@@ -151,24 +169,28 @@
             <div id="hiddenInputsContainer"></div>
 
             <!-- Summary & Confirm Button -->
-            <div class="pt-3 border-t border-slate-200 space-y-2 bg-slate-50 -mx-5 -mb-5 p-5 rounded-b-lg">
+            <div class="pt-3 border-t border-slate-200 space-y-1.5 bg-slate-50 -mx-5 -mb-5 p-5 rounded-b-lg">
                 <div class="flex items-center justify-between text-xs text-slate-600">
-                    <span>Subtotal:</span>
-                    <span id="cartSubtotal" class="font-mono font-medium">$0.00</span>
+                    <span>Op. Gravada (Base Imponible):</span>
+                    <span id="cartTaxedBase" class="font-mono font-medium tabular-nums">S/ 0.00</span>
                 </div>
                 <div class="flex items-center justify-between text-xs text-slate-600">
-                    <span>Impuestos (0%):</span>
-                    <span class="font-mono font-medium">$0.00</span>
+                    <span>Op. Exonerada / Inafecta:</span>
+                    <span id="cartExemptBase" class="font-mono font-medium tabular-nums">S/ 0.00</span>
+                </div>
+                <div class="flex items-center justify-between text-xs text-slate-600">
+                    <span>IGV (18%):</span>
+                    <span id="cartIgvAmount" class="font-mono font-medium tabular-nums">S/ 0.00</span>
                 </div>
                 <div class="flex items-center justify-between text-sm font-bold text-slate-900 pt-1.5 border-t border-slate-200">
                     <span>TOTAL A PAGAR:</span>
-                    <span id="cartTotal" class="font-mono text-brand-950 text-base font-bold">$0.00</span>
+                    <span id="cartTotal" class="font-mono text-brand-950 text-base font-bold tabular-nums">S/ 0.00</span>
                 </div>
 
                 <button type="submit" id="confirmSaleBtn" disabled
-                        class="w-full py-2.5 rounded-md bg-brand-900 hover:bg-brand-950 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium text-xs tracking-wide shadow-sm transition flex items-center justify-center">
+                        class="w-full py-2.5 mt-1 rounded-md bg-brand-900 hover:bg-brand-950 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-medium text-xs tracking-wide shadow-sm transition flex items-center justify-center">
                     <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    Confirmar y Registrar Venta
+                    Confirmar y Emitir Comprobante Interno
                 </button>
             </div>
         </form>
@@ -178,8 +200,13 @@
 <!-- POS Cart Script -->
 <script>
     let cart = [];
+    const IGV_RATE = 0.18;
 
-    function addToCart(id, name, sku, price, maxStock) {
+    function roundHalfUp(num) {
+        return Math.round((num + Number.EPSILON) * 100) / 100;
+    }
+
+    function addToCart(id, name, sku, price, maxStock, taxType = 'gravado') {
         const existing = cart.find(item => item.id === id);
         if (existing) {
             if (existing.quantity < maxStock) {
@@ -194,7 +221,8 @@
                 sku: sku,
                 price: price,
                 quantity: 1,
-                maxStock: maxStock
+                maxStock: maxStock,
+                taxType: taxType || 'gravado'
             });
         }
         renderCart();
@@ -232,24 +260,53 @@
         const emptyMsg = document.getElementById('emptyCartMessage');
         const hiddenInputs = document.getElementById('hiddenInputsContainer');
         const confirmBtn = document.getElementById('confirmSaleBtn');
+        const pricesIncludeTax = document.getElementById('prices_include_tax').value === '1';
 
         container.innerHTML = '';
         hiddenInputs.innerHTML = '';
 
         if (cart.length === 0) {
             container.appendChild(emptyMsg);
-            document.getElementById('cartSubtotal').textContent = '$0.00';
-            document.getElementById('cartTotal').textContent = '$0.00';
+            document.getElementById('cartTaxedBase').textContent = 'S/ 0.00';
+            document.getElementById('cartExemptBase').textContent = 'S/ 0.00';
+            document.getElementById('cartIgvAmount').textContent = 'S/ 0.00';
+            document.getElementById('cartTotal').textContent = 'S/ 0.00';
             confirmBtn.disabled = true;
             return;
         }
 
         confirmBtn.disabled = false;
-        let subtotal = 0;
+        let taxedBase = 0;
+        let exemptBase = 0;
+        let totalIgv = 0;
+        let grandTotal = 0;
 
         cart.forEach((item, index) => {
-            const lineTotal = item.price * item.quantity;
-            subtotal += lineTotal;
+            const rawLine = roundHalfUp(item.price * item.quantity);
+            let lineBase = 0;
+            let lineIgv = 0;
+            let lineTotal = 0;
+
+            if (item.taxType === 'gravado') {
+                if (pricesIncludeTax) {
+                    lineTotal = rawLine;
+                    lineBase = roundHalfUp(lineTotal / (1 + IGV_RATE));
+                    lineIgv = roundHalfUp(lineTotal - lineBase);
+                } else {
+                    lineBase = rawLine;
+                    lineIgv = roundHalfUp(lineBase * IGV_RATE);
+                    lineTotal = roundHalfUp(lineBase + lineIgv);
+                }
+                taxedBase = roundHalfUp(taxedBase + lineBase);
+            } else {
+                lineBase = rawLine;
+                lineIgv = 0;
+                lineTotal = rawLine;
+                exemptBase = roundHalfUp(exemptBase + lineBase);
+            }
+
+            totalIgv = roundHalfUp(totalIgv + lineIgv);
+            grandTotal = roundHalfUp(grandTotal + lineTotal);
 
             // Render Item Card
             const div = document.createElement('div');
@@ -257,7 +314,7 @@
             div.innerHTML = `
                 <div class="overflow-hidden pr-2">
                     <span class="font-medium text-slate-900 block truncate">${item.name}</span>
-                    <span class="text-[11px] font-mono tabular-nums text-slate-500">${item.sku} • $${item.price.toFixed(2)} c/u</span>
+                    <span class="text-[11px] font-mono tabular-nums text-slate-500">${item.sku} • S/ ${item.price.toFixed(2)} (${item.taxType.toUpperCase()})</span>
                 </div>
                 <div class="flex items-center space-x-2 flex-shrink-0">
                     <div class="flex items-center border border-slate-300 rounded-md bg-white overflow-hidden shadow-xs">
@@ -265,7 +322,7 @@
                         <span class="w-7 text-center font-mono font-medium text-slate-900 tabular-nums text-xs">${item.quantity}</span>
                         <button type="button" onclick="updateQuantity(${item.id}, 1)" class="w-8 h-8 flex items-center justify-center text-slate-700 hover:bg-slate-100 font-bold text-sm touch-manipulation focus:outline-none focus:ring-1 focus:ring-brand-800" aria-label="Aumentar una unidad de ${item.name}">+</button>
                     </div>
-                    <span class="font-mono font-bold text-slate-900 w-16 text-right tabular-nums text-xs">$${lineTotal.toFixed(2)}</span>
+                    <span class="font-mono font-bold text-slate-900 w-20 text-right tabular-nums text-xs">S/ ${lineTotal.toFixed(2)}</span>
                     <button type="button" onclick="removeFromCart(${item.id})" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition focus:outline-none focus:ring-1 focus:ring-rose-500" title="Eliminar artículo" aria-label="Eliminar ${item.name} del carrito">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -280,8 +337,10 @@
             `;
         });
 
-        document.getElementById('cartSubtotal').textContent = `$${subtotal.toFixed(2)}`;
-        document.getElementById('cartTotal').textContent = `$${subtotal.toFixed(2)}`;
+        document.getElementById('cartTaxedBase').textContent = `S/ ${taxedBase.toFixed(2)}`;
+        document.getElementById('cartExemptBase').textContent = `S/ ${exemptBase.toFixed(2)}`;
+        document.getElementById('cartIgvAmount').textContent = `S/ ${totalIgv.toFixed(2)}`;
+        document.getElementById('cartTotal').textContent = `S/ ${grandTotal.toFixed(2)}`;
     }
 
     function toggleCustomerNameInput(select) {

@@ -42,13 +42,15 @@
                     <option value="efectivo" {{ request('payment_method') === 'efectivo' ? 'selected' : '' }}>Efectivo</option>
                     <option value="tarjeta" {{ request('payment_method') === 'tarjeta' ? 'selected' : '' }}>Tarjeta</option>
                     <option value="transferencia" {{ request('payment_method') === 'transferencia' ? 'selected' : '' }}>Transferencia</option>
+                    <option value="yape" {{ request('payment_method') === 'yape' ? 'selected' : '' }}>Yape</option>
+                    <option value="plin" {{ request('payment_method') === 'plin' ? 'selected' : '' }}>Plin</option>
                 </select>
             </div>
             <div class="flex items-center space-x-2">
                 <button type="submit" class="w-full py-2 px-3 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs transition">
                     Filtrar
                 </button>
-                @if(request()->hasAny(['search', 'start_date', 'end_date', 'payment_method']))
+                @if(request()->hasAny(['search', 'start_date', 'end_date', 'payment_method', 'status']))
                 <a href="{{ route('sales.index') }}" class="p-2 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-600 transition" title="Limpiar filtros" aria-label="Limpiar filtros">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </a>
@@ -68,14 +70,15 @@
                         <th class="px-4 py-3">Cliente</th>
                         <th class="px-4 py-3">Atendido por</th>
                         <th class="px-4 py-3 text-center">Método</th>
-                        <th class="px-4 py-3 text-center">Ítems</th>
+                        <th class="px-4 py-3 text-center">Estado</th>
+                        <th class="px-4 py-3 text-right">IGV</th>
                         <th class="px-4 py-3 text-right">Total</th>
                         <th class="px-4 py-3 text-right">Comprobante</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($sales as $sale)
-                    <tr class="hover:bg-slate-50 transition">
+                    <tr class="hover:bg-slate-50 transition {{ $sale->status === 'cancelled' ? 'bg-rose-50/30 opacity-75' : '' }}">
                         <td class="px-4 py-3 font-mono font-bold text-brand-900">
                             {{ $sale->sale_number }}
                         </td>
@@ -93,21 +96,32 @@
                                 {{ $sale->payment_method }}
                             </span>
                         </td>
-                        <td class="px-4 py-3 text-center font-mono tabular-nums text-slate-700 font-medium">
-                            {{ $sale->items->sum('quantity') }} u.
+                        <td class="px-4 py-3 text-center">
+                            @if($sale->status === 'cancelled')
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                                    Anulada
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                    Completada
+                                </span>
+                            @endif
                         </td>
-                        <td class="px-4 py-3 text-right font-bold font-mono text-slate-900 text-sm">
-                            ${{ number_format($sale->total, 2) }}
+                        <td class="px-4 py-3 text-right font-mono tabular-nums text-slate-600">
+                            S/ {{ number_format($sale->tax, 2) }}
+                        </td>
+                        <td class="px-4 py-3 text-right font-bold font-mono text-slate-900 text-sm tabular-nums">
+                            S/ {{ number_format($sale->total, 2) }}
                         </td>
                         <td class="px-4 py-3 text-right">
                             <a href="{{ route('sales.show', $sale) }}" class="inline-flex items-center px-2.5 py-1 rounded-md bg-brand-50 hover:bg-brand-100 text-brand-900 text-xs font-medium border border-brand-200 transition">
-                                Ver Ticket
+                                Ver Comprobante
                             </a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-4 py-12 text-center text-slate-400">
+                        <td colspan="9" class="px-4 py-12 text-center text-slate-400">
                             No se encontraron ventas registradas con los filtros aplicados.
                         </td>
                     </tr>

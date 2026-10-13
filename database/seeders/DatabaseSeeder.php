@@ -7,9 +7,9 @@ use App\Models\Customer;
 use App\Models\InventoryMovement;
 use App\Models\Product;
 use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\SaleService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -19,8 +19,8 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Usuarios Demo
-        $admin = User::firstOrCreate(
+        // 1. Usuarios Demo (Perú)
+        $admin = User::updateOrCreate(
             ['email' => 'admin@pymeflow.com'],
             [
                 'name' => 'Carlos Mendoza (Administrador)',
@@ -30,10 +30,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $seller = User::firstOrCreate(
+        $seller = User::updateOrCreate(
             ['email' => 'vendedor@pymeflow.com'],
             [
-                'name' => 'Ana Gómez (Vendedora)',
+                'name' => 'Ana Quispe (Vendedora)',
                 'password' => Hash::make('password'),
                 'role' => 'seller',
                 'is_active' => true,
@@ -41,84 +41,90 @@ class DatabaseSeeder extends Seeder
         );
 
         // 2. Categorías
-        $catElectronics = Category::firstOrCreate(['name' => 'Electrónica y Gadgets'], [
-            'slug' => Str::slug('Electrónica y Gadgets'),
+        $catElectronics = Category::updateOrCreate(['name' => 'Tecnología y Cómputo'], [
+            'slug' => Str::slug('Tecnología y Cómputo'),
             'description' => 'Dispositivos, accesorios y periféricos de computación.',
             'is_active' => true,
         ]);
 
-        $catOffice = Category::firstOrCreate(['name' => 'Oficina y Mobiliario'], [
-            'slug' => Str::slug('Oficina y Mobiliario'),
-            'description' => 'Artículos, escritorios y mobiliario ergonómico para empresas.',
+        $catOffice = Category::updateOrCreate(['name' => 'Oficina y Librería'], [
+            'slug' => Str::slug('Oficina y Librería'),
+            'description' => 'Artículos, libros técnicos, papelería y mobiliario ergonómico.',
             'is_active' => true,
         ]);
 
-        $catFood = Category::firstOrCreate(['name' => 'Alimentos y Café'], [
-            'slug' => Str::slug('Alimentos y Café'),
-            'description' => 'Insumos corporativos, café de especialidad y snacks.',
+        $catFood = Category::updateOrCreate(['name' => 'Alimentos y Cafetería'], [
+            'slug' => Str::slug('Alimentos y Cafetería'),
+            'description' => 'Insumos corporativos, café peruano de especialidad y productos agrícolas.',
             'is_active' => true,
         ]);
 
-        $catTools = Category::firstOrCreate(['name' => 'Ferretería y Mantenimiento'], [
+        $catTools = Category::updateOrCreate(['name' => 'Ferretería y Mantenimiento'], [
             'slug' => Str::slug('Ferretería y Mantenimiento'),
             'description' => 'Herramientas de precisión y mantenimiento industrial.',
             'is_active' => true,
         ]);
 
-        // 3. Proveedores
-        Supplier::firstOrCreate(['company_name' => 'TechImports Mayorista S.A.'], [
+        // 3. Proveedores Peruanos (RUC 11 dígitos)
+        Supplier::updateOrCreate(['tax_id' => '20554433221'], [
+            'company_name' => 'Importaciones Tecnológicas Lima S.A.C.',
             'contact_name' => 'Roberto Sánchez',
-            'tax_id' => '900888123-1',
-            'email' => 'ventas@techimports.com',
-            'phone' => '+57 1 8000123',
-            'address' => 'Zona Franca Bodega 14, Bogotá',
+            'document_type' => 'RUC',
+            'email' => 'ventas@importacionestec.pe',
+            'phone' => '+51 1 4458900',
+            'address' => 'Av. Garcilaso de la Vega 1250, Cercado de Lima',
             'is_active' => true,
         ]);
 
-        Supplier::firstOrCreate(['company_name' => 'Insumos Globales & Papelería'], [
-            'contact_name' => 'Marta Domínguez',
-            'tax_id' => '900333444-2',
-            'email' => 'pedidos@insumosglobales.com',
-            'phone' => '+57 1 7654321',
-            'address' => 'Parque Industrial Sur, Medellín',
+        Supplier::updateOrCreate(['tax_id' => '20601122334'], [
+            'company_name' => 'Distribuidora Papelera Andina E.I.R.L.',
+            'contact_name' => 'Marta Paredes',
+            'document_type' => 'RUC',
+            'email' => 'pedidos@papeleraandina.pe',
+            'phone' => '+51 1 3216540',
+            'address' => 'Av. Argentina 2410, Callao, Lima',
             'is_active' => true,
         ]);
 
-        // 4. Clientes
-        $cust1 = Customer::firstOrCreate(['tax_id' => '900123456-1'], [
-            'name' => 'Acero & Construcciones S.A.S.',
-            'email' => 'contacto@acero.com',
-            'phone' => '+57 300 1234567',
-            'address' => 'Av. Industrial 45 # 12-30',
+        // 4. Clientes Peruanos (RUC y DNI)
+        $cust1 = Customer::updateOrCreate(['tax_id' => '20518899776'], [
+            'name' => 'Constructora & Ingeniería Pacífico S.A.C.',
+            'document_type' => 'RUC',
+            'email' => 'logistica@pacificoperu.pe',
+            'phone' => '+51 998 112 233',
+            'address' => 'Av. Javier Prado Este 2890, San Borja, Lima',
             'is_active' => true,
         ]);
 
-        $cust2 = Customer::firstOrCreate(['tax_id' => '900765432-8'], [
-            'name' => 'Distribuidora del Norte Ltda.',
-            'email' => 'compras@norte.com',
-            'phone' => '+57 311 9876543',
-            'address' => 'Calle 100 # 15-20, Cali',
+        $cust2 = Customer::updateOrCreate(['tax_id' => '20456789012'], [
+            'name' => 'Comercializadora del Sur S.R.L.',
+            'document_type' => 'RUC',
+            'email' => 'compras@comercialsur.pe',
+            'phone' => '+51 954 334 455',
+            'address' => 'Av. Ejército 710, Yanahuara, Arequipa',
             'is_active' => true,
         ]);
 
-        $cust3 = Customer::firstOrCreate(['tax_id' => '1020304050'], [
-            'name' => 'María Fernández',
-            'email' => 'maria.fernandez@gmail.com',
-            'phone' => '+57 320 5551234',
-            'address' => 'Carrera 7 # 45-10',
+        $cust3 = Customer::updateOrCreate(['tax_id' => '45891236'], [
+            'name' => 'María Elena Huamán Rojas',
+            'document_type' => 'DNI',
+            'email' => 'mhuaman@gmail.com',
+            'phone' => '+51 987 654 321',
+            'address' => 'Jr. Las Magnolias 450, Jesús María, Lima',
             'is_active' => true,
         ]);
 
-        // 5. Productos
+        // 5. Catálogo de Productos en Soles (PEN - S/) con afectación IGV diferenciada
         $productsData = [
             [
                 'category_id' => $catElectronics->id,
                 'sku' => 'PRD-TEC-001',
                 'name' => 'Teclado Mecánico RGB Switch Blue',
                 'description' => 'Teclado mecánico con retroiluminación RGB configurable, anti-ghosting.',
-                'cost_price' => 25.00,
-                'sale_price' => 49.99,
-                'stock' => 25,
+                'cost_price' => 95.00,
+                'sale_price' => 177.00, // Gravado: Base S/ 150.00 + IGV S/ 27.00
+                'tax_type' => 'gravado',
+                'initial_stock' => 28,
                 'min_stock' => 5,
             ],
             [
@@ -126,9 +132,10 @@ class DatabaseSeeder extends Seeder
                 'sku' => 'PRD-TEC-002',
                 'name' => 'Mouse Inalámbrico Ergonómico 2.4G',
                 'description' => 'Sensor óptico de alta precisión con agarre vertical anti fatiga.',
-                'cost_price' => 12.00,
-                'sale_price' => 24.50,
-                'stock' => 40,
+                'cost_price' => 35.00,
+                'sale_price' => 70.80, // Gravado: Base S/ 60.00 + IGV S/ 10.80
+                'tax_type' => 'gravado',
+                'initial_stock' => 41,
                 'min_stock' => 8,
             ],
             [
@@ -136,9 +143,10 @@ class DatabaseSeeder extends Seeder
                 'sku' => 'PRD-TEC-003',
                 'name' => 'Monitor LED 24" IPS Full HD 75Hz',
                 'description' => 'Pantalla ultra delgada con conectividad HDMI y DisplayPort.',
-                'cost_price' => 95.00,
-                'sale_price' => 149.00,
-                'stock' => 12,
+                'cost_price' => 360.00,
+                'sale_price' => 590.00, // Gravado: Base S/ 500.00 + IGV S/ 90.00
+                'tax_type' => 'gravado',
+                'initial_stock' => 13,
                 'min_stock' => 3,
             ],
             [
@@ -146,39 +154,43 @@ class DatabaseSeeder extends Seeder
                 'sku' => 'PRD-OFI-001',
                 'name' => 'Silla Ergonómica Ejecutiva Lumbar',
                 'description' => 'Soporte lumbar ajustable, malla transpirable y ruedas de silicona.',
-                'cost_price' => 60.00,
-                'sale_price' => 115.00,
-                'stock' => 3, // ALERTA DE STOCK BAJO (min: 5)
+                'cost_price' => 240.00,
+                'sale_price' => 413.00, // Gravado: Base S/ 350.00 + IGV S/ 63.00
+                'tax_type' => 'gravado',
+                'initial_stock' => 3, // Alerta de stock bajo (min: 5)
                 'min_stock' => 5,
             ],
             [
                 'category_id' => $catOffice->id,
                 'sku' => 'PRD-OFI-002',
-                'name' => 'Cuaderno Corporativo A5 Tapa Dura 100 Hojas',
-                'description' => 'Papel ecológico de 90g con elástico y cinta separadora.',
-                'cost_price' => 3.50,
-                'sale_price' => 7.90,
-                'stock' => 85,
+                'name' => 'Manual Técnico de Contabilidad y Tributación PYME',
+                'description' => 'Edición impresa actualizada (Bien exonerado de IGV según ley del libro).',
+                'cost_price' => 28.00,
+                'sale_price' => 55.00, // Exonerado: Base S/ 55.00 + IGV S/ 0.00
+                'tax_type' => 'exonerado',
+                'initial_stock' => 86,
                 'min_stock' => 15,
             ],
             [
                 'category_id' => $catFood->id,
                 'sku' => 'PRD-ALI-001',
-                'name' => 'Café Gourmet Origen Huila 500g',
-                'description' => 'Café tostado en grano de notas achocolatadas y acidez cítrica media.',
-                'cost_price' => 6.00,
-                'sale_price' => 13.50,
-                'stock' => 2, // ALERTA DE STOCK BAJO (min: 10)
+                'name' => 'Café Gourmet Villa Rica Origen Pasco 500g',
+                'description' => 'Café tostado en grano de altura con notas achocolatadas.',
+                'cost_price' => 20.00,
+                'sale_price' => 41.30, // Gravado: Base S/ 35.00 + IGV S/ 6.30
+                'tax_type' => 'gravado',
+                'initial_stock' => 2, // Alerta de stock bajo (min: 10)
                 'min_stock' => 10,
             ],
             [
                 'category_id' => $catFood->id,
                 'sku' => 'PRD-ALI-002',
-                'name' => 'Té Verde Matcha Puro 100g',
-                'description' => 'Matcha ceremonial orgánico de alta pureza.',
-                'cost_price' => 4.20,
-                'sale_price' => 9.50,
-                'stock' => 30,
+                'name' => 'Quinua Orgánica Perlada de Puno 1kg (Grano Natural)',
+                'description' => 'Producto agrícola primario exonerado según Apéndice I Ley del IGV.',
+                'cost_price' => 9.50,
+                'sale_price' => 18.00, // Exonerado: Base S/ 18.00 + IGV S/ 0.00
+                'tax_type' => 'exonerado',
+                'initial_stock' => 30,
                 'min_stock' => 6,
             ],
             [
@@ -186,151 +198,117 @@ class DatabaseSeeder extends Seeder
                 'sku' => 'PRD-FER-001',
                 'name' => 'Kit Destornilladores de Precisión 24 en 1',
                 'description' => 'Puntas magnéticas de acero S2 en estuche de aluminio.',
-                'cost_price' => 8.00,
-                'sale_price' => 18.00,
-                'stock' => 15,
+                'cost_price' => 28.00,
+                'sale_price' => 59.00, // Gravado: Base S/ 50.00 + IGV S/ 9.00
+                'tax_type' => 'gravado',
+                'initial_stock' => 17,
                 'min_stock' => 4,
             ],
         ];
 
         $createdProducts = [];
         foreach ($productsData as $pData) {
-            $p = Product::firstOrCreate(['sku' => $pData['sku']], $pData);
-            $createdProducts[$p->sku] = $p;
+            $initialStock = $pData['initial_stock'];
+            unset($pData['initial_stock']);
 
-            // Registrar movimiento inicial de inventario si no existe
-            InventoryMovement::firstOrCreate(
-                ['product_id' => $p->id, 'reason' => 'Inventario inicial del sistema'],
-                [
-                    'user_id' => $admin->id,
-                    'type' => 'in',
-                    'quantity' => $p->stock,
-                    'previous_stock' => 0,
-                    'new_stock' => $p->stock,
-                    'reference_type' => 'InitialSetup',
-                    'reference_id' => null,
-                    'created_at' => Carbon::now()->subDays(10),
-                ]
-            );
+            $existing = Product::where('sku', $pData['sku'])->first();
+            if (!$existing) {
+                $pData['stock'] = $initialStock;
+                $p = Product::create($pData);
+
+                InventoryMovement::firstOrCreate(
+                    ['product_id' => $p->id, 'reference_type' => 'InitialSetup'],
+                    [
+                        'user_id' => $admin->id,
+                        'type' => 'in',
+                        'quantity' => $initialStock,
+                        'previous_stock' => 0,
+                        'new_stock' => $initialStock,
+                        'reason' => 'Inventario inicial del sistema',
+                        'reference_id' => null,
+                        'created_at' => Carbon::now()->subDays(10),
+                    ]
+                );
+            } else {
+                $p = $existing;
+            }
+            $createdProducts[$p->sku] = $p;
         }
 
-        // 6. Ventas de Demostración con fechas para alimentar gráficos y KPIs
-        if (Sale::count() === 0) {
-            // Venta 1: Ayer
-            $sale1 = Sale::create([
-                'sale_number' => 'VEN-202610-0001',
-                'user_id' => $seller->id,
+        // 6. Ventas de Demostración creadas mediante SaleService (Garantiza cuadre exacto de cabecera, ítems, IGV y Kardex)
+        $saleService = app(SaleService::class);
+
+        if (!Sale::where('idempotency_key', 'SEED-SALE-0001')->exists()) {
+            $saleService->createSale($seller, [
+                'idempotency_key' => 'SEED-SALE-0001',
                 'customer_id' => $cust1->id,
-                'customer_name' => $cust1->name,
-                'subtotal' => 223.99,
-                'tax' => 0.00,
-                'total' => 223.99,
                 'payment_method' => 'transferencia',
-                'status' => 'completed',
-                'notes' => 'Entrega en oficina central',
+                'notes' => 'Entrega en oficina de San Borja',
                 'created_at' => Carbon::yesterday()->setHour(14)->setMinute(30),
+                'items' => [
+                    ['product_id' => $createdProducts['PRD-TEC-001']->id, 'quantity' => 3], // 3 * 177.00 = 531.00 (Base 450 + IGV 81)
+                    ['product_id' => $createdProducts['PRD-TEC-002']->id, 'quantity' => 1], // 1 * 70.80  = 70.80  (Base 60  + IGV 10.80)
+                ],
             ]);
+        }
 
-            SaleItem::create([
-                'sale_id' => $sale1->id,
-                'product_id' => $createdProducts['PRD-TEC-001']->id,
-                'product_name' => $createdProducts['PRD-TEC-001']->name,
-                'product_sku' => $createdProducts['PRD-TEC-001']->sku,
-                'quantity' => 2,
-                'unit_price' => 49.99,
-                'cost_price' => 25.00,
-                'subtotal' => 99.98,
-                'created_at' => Carbon::yesterday()->setHour(14)->setMinute(30),
-            ]);
-
-            SaleItem::create([
-                'sale_id' => $sale1->id,
-                'product_id' => $createdProducts['PRD-TEC-002']->id,
-                'product_name' => $createdProducts['PRD-TEC-002']->name,
-                'product_sku' => $createdProducts['PRD-TEC-002']->sku,
-                'quantity' => 1,
-                'unit_price' => 24.50,
-                'cost_price' => 12.00,
-                'subtotal' => 24.50,
-                'created_at' => Carbon::yesterday()->setHour(14)->setMinute(30),
-            ]);
-
-            SaleItem::create([
-                'sale_id' => $sale1->id,
-                'product_id' => $createdProducts['PRD-TEC-001']->id,
-                'product_name' => $createdProducts['PRD-TEC-001']->name,
-                'product_sku' => $createdProducts['PRD-TEC-001']->sku,
-                'quantity' => 1,
-                'unit_price' => 49.99,
-                'cost_price' => 25.00,
-                'subtotal' => 49.99,
-                'created_at' => Carbon::yesterday()->setHour(14)->setMinute(30),
-            ]);
-
-            // Venta 2: Hoy
-            $sale2 = Sale::create([
-                'sale_number' => 'VEN-202610-0002',
-                'user_id' => $seller->id,
+        if (!Sale::where('idempotency_key', 'SEED-SALE-0002')->exists()) {
+            // Venta mixta (Gravado + Exonerado)
+            $saleService->createSale($seller, [
+                'idempotency_key' => 'SEED-SALE-0002',
                 'customer_id' => $cust2->id,
-                'customer_name' => $cust2->name,
-                'subtotal' => 156.90,
-                'tax' => 0.00,
-                'total' => 156.90,
-                'payment_method' => 'efectivo',
-                'status' => 'completed',
-                'notes' => 'Venta en mostrador',
+                'payment_method' => 'yape',
+                'notes' => 'Venta mixta con libro exonerado',
                 'created_at' => Carbon::now()->subHours(2),
+                'items' => [
+                    ['product_id' => $createdProducts['PRD-TEC-003']->id, 'quantity' => 1], // Gravado: 590.00 (Base 500 + IGV 90)
+                    ['product_id' => $createdProducts['PRD-OFI-002']->id, 'quantity' => 1], // Exonerado: 55.00 (Base 55 + IGV 0)
+                ],
             ]);
+        }
 
-            SaleItem::create([
-                'sale_id' => $sale2->id,
-                'product_id' => $createdProducts['PRD-TEC-003']->id,
-                'product_name' => $createdProducts['PRD-TEC-003']->name,
-                'product_sku' => $createdProducts['PRD-TEC-003']->sku,
-                'quantity' => 1,
-                'unit_price' => 149.00,
-                'cost_price' => 95.00,
-                'subtotal' => 149.00,
-                'created_at' => Carbon::now()->subHours(2),
-            ]);
-
-            SaleItem::create([
-                'sale_id' => $sale2->id,
-                'product_id' => $createdProducts['PRD-OFI-002']->id,
-                'product_name' => $createdProducts['PRD-OFI-002']->name,
-                'product_sku' => $createdProducts['PRD-OFI-002']->sku,
-                'quantity' => 1,
-                'unit_price' => 7.90,
-                'cost_price' => 3.50,
-                'subtotal' => 7.90,
-                'created_at' => Carbon::now()->subHours(2),
-            ]);
-
-            // Venta 3: Hoy (Cliente Ocasional)
-            $sale3 = Sale::create([
-                'sale_number' => 'VEN-202610-0003',
-                'user_id' => $admin->id,
+        if (!Sale::where('idempotency_key', 'SEED-SALE-0003')->exists()) {
+            $saleService->createSale($admin, [
+                'idempotency_key' => 'SEED-SALE-0003',
                 'customer_id' => null,
                 'customer_name' => 'Cliente Ocasional',
-                'subtotal' => 36.00,
-                'tax' => 0.00,
-                'total' => 36.00,
                 'payment_method' => 'tarjeta',
-                'status' => 'completed',
-                'notes' => 'Pago sin contacto',
+                'notes' => 'Pago POS sin contacto',
                 'created_at' => Carbon::now()->subMinutes(30),
+                'items' => [
+                    ['product_id' => $createdProducts['PRD-FER-001']->id, 'quantity' => 2], // 2 * 59.00 = 118.00 (Base 100 + IGV 18)
+                ],
             ]);
+        }
 
-            SaleItem::create([
-                'sale_id' => $sale3->id,
-                'product_id' => $createdProducts['PRD-FER-001']->id,
-                'product_name' => $createdProducts['PRD-FER-001']->name,
-                'product_sku' => $createdProducts['PRD-FER-001']->sku,
-                'quantity' => 2,
-                'unit_price' => 18.00,
-                'cost_price' => 8.00,
-                'subtotal' => 36.00,
-                'created_at' => Carbon::now()->subMinutes(30),
+        // 7. Órdenes de Compra de Demostración (1 recepcionada y 1 pendiente)
+        $supp1 = Supplier::where('tax_id', '20554433221')->first();
+        $supp2 = Supplier::where('tax_id', '20601122334')->first();
+        $purchaseService = app(\App\Services\PurchaseService::class);
+
+        if ($supp1 && !\App\Models\Purchase::where('supplier_document', 'F001-0004512')->exists()) {
+            $purchaseService->createPurchase($admin, [
+                'supplier_id' => $supp1->id,
+                'supplier_document' => 'F001-0004512',
+                'prices_include_tax' => false,
+                'receive_immediately' => true,
+                'notes' => 'Reposición mensual de periféricos recibida conforme en almacén',
+                'items' => [
+                    ['product_id' => $createdProducts['PRD-TEC-001']->id, 'quantity' => 5, 'unit_cost' => 95.00],
+                ],
+            ]);
+        }
+
+        if ($supp2 && !\App\Models\Purchase::where('supplier_document', 'OC-2026-089')->exists()) {
+            $purchaseService->createPurchase($admin, [
+                'supplier_id' => $supp2->id,
+                'supplier_document' => 'OC-2026-089',
+                'prices_include_tax' => false,
+                'receive_immediately' => false,
+                'notes' => 'Orden emitida pendiente de llegada de proveedor para reabastecer stock bajo',
+                'items' => [
+                    ['product_id' => $createdProducts['PRD-OFI-001']->id, 'quantity' => 10, 'unit_cost' => 240.00],
+                ],
             ]);
         }
     }

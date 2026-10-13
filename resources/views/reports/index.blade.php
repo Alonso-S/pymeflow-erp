@@ -43,22 +43,28 @@
     </div>
 
     <!-- Period Summary Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Facturación del Período</p>
-            <h3 class="text-2xl font-bold text-slate-900 mt-1 tabular-nums font-mono">${{ number_format($salesTotal, 2) }}</h3>
-            <p class="text-xs text-slate-500 mt-1">Total recaudado entre fechas</p>
+            <h3 class="text-2xl font-bold text-slate-900 mt-1 tabular-nums font-mono">S/ {{ number_format($salesTotal, 2) }}</h3>
+            <p class="text-xs text-slate-500 mt-1">Total recaudado en ventas completadas</p>
+        </div>
+
+        <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">IGV Estimado (18%)</p>
+            <h3 class="text-2xl font-bold text-slate-900 mt-1 tabular-nums font-mono">S/ {{ number_format($salesTaxTotal ?? 0, 2) }}</h3>
+            <p class="text-xs text-slate-500 mt-1">Impuesto General a las Ventas del período</p>
         </div>
 
         <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Volumen de Transacciones</p>
             <h3 class="text-2xl font-bold text-slate-900 mt-1 tabular-nums font-mono">{{ $salesCount }} órdenes</h3>
-            <p class="text-xs text-slate-500 mt-1">Ventas completadas con éxito</p>
+            <p class="text-xs text-slate-500 mt-1">Ventas vigentes no anuladas</p>
         </div>
 
         <div class="bg-white rounded-lg p-5 border border-slate-200 shadow-sm">
             <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Ticket Promedio</p>
-            <h3 class="text-2xl font-bold text-brand-900 mt-1 tabular-nums font-mono">${{ number_format($averageTicket, 2) }}</h3>
+            <h3 class="text-2xl font-bold text-brand-900 mt-1 tabular-nums font-mono">S/ {{ number_format($averageTicket, 2) }}</h3>
             <p class="text-xs text-slate-500 mt-1">Monto promedio por transacción comercial</p>
         </div>
     </div>
@@ -92,7 +98,7 @@
                                 </span>
                             </td>
                             <td class="py-2.5 text-right font-bold font-mono tabular-nums text-slate-900">
-                                ${{ number_format($top->total_revenue, 2) }}
+                                S/ {{ number_format($top->total_revenue, 2) }}
                             </td>
                         </tr>
                         @empty

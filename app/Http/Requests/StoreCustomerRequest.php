@@ -15,6 +15,7 @@ class StoreCustomerRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:150'],
+            'document_type' => ['nullable', 'string', 'in:DNI,RUC,CE,PASAPORTE'],
             'tax_id' => ['nullable', 'string', 'max:30', 'unique:customers,tax_id'],
             'email' => ['nullable', 'email', 'max:150'],
             'phone' => ['nullable', 'string', 'max:30'],

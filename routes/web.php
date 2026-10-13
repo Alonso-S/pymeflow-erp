@@ -6,6 +6,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InventoryMovementController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SaleController;
 use App\Http\Controllers\SupplierController;
@@ -61,9 +62,20 @@ Route::middleware('auth')->group(function () {
         Route::resource('suppliers', SupplierController::class)->except(['destroy', 'show']);
         Route::patch('/suppliers/{supplier}/toggle-status', [SupplierController::class, 'toggleStatus'])->name('suppliers.toggle-status');
 
+        // Compras y Abastecimiento
+        Route::get('/purchases', [PurchaseController::class, 'index'])->name('purchases.index');
+        Route::get('/purchases/create', [PurchaseController::class, 'create'])->name('purchases.create');
+        Route::post('/purchases', [PurchaseController::class, 'store'])->name('purchases.store');
+        Route::get('/purchases/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show');
+        Route::post('/purchases/{purchase}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive');
+        Route::post('/purchases/{purchase}/cancel', [PurchaseController::class, 'cancel'])->name('purchases.cancel');
+
         // Ajustes manuales de Inventario
         Route::get('/inventory/create', [InventoryMovementController::class, 'create'])->name('inventory.create');
         Route::post('/inventory', [InventoryMovementController::class, 'store'])->name('inventory.store');
+
+        // Anulación interna de ventas y restitución de stock
+        Route::post('/sales/{sale}/cancel', [SaleController::class, 'cancel'])->name('sales.cancel');
 
         // Reportes y Analítica avanzada
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

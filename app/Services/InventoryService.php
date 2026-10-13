@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 class InventoryService
 {
     /**
-     * Registra un movimiento inmutable en el historial y actualiza el stock del producto.
+     * Registra un movimiento inmutable en el historial y actualiza el stock del producto
+     * de forma atómica y con bloqueo pesimista contra condiciones de carrera.
      *
      * @param Product $product
      * @param User $user
@@ -36,48 +37,55 @@ class InventoryService
             throw new DomainException('La cantidad del movimiento debe ser un número entero mayor a cero.');
         }
 
-        $previousStock = $product->stock;
+        return DB::transaction(function () use ($product, $user, $type, $quantity, $reason, $referenceType, $referenceId) {
+            // Re-adquirir y bloquear el producto en la base de datos para garantizar lectura consistente de stock
+            /** @var Product $lockedProduct */
+            $lockedProduct = Product::whereKey($product->id)->lockForUpdate()->firstOrFail();
 
-        switch ($type) {
-            case 'in':
-                $newStock = $previousStock + $quantity;
-                break;
+            $previousStock = $lockedProduct->stock;
 
-            case 'out':
-                if ($previousStock < $quantity) {
-                    throw new DomainException("Stock insuficiente para el producto '{$product->name}' (SKU: {$product->sku}). Disponible: {$previousStock}, Solicitado: {$quantity}.");
-                }
-                $newStock = $previousStock - $quantity;
-                break;
+            switch ($type) {
+                case 'in':
+                    $newStock = $previousStock + $quantity;
+                    break;
 
-            case 'adjustment':
-                if ($quantity < 0) {
-                    throw new DomainException('El stock ajustado no puede ser un número negativo.');
-                }
-                $newStock = $quantity;
-                // La cantidad registrada en el movimiento refleja la diferencia absoluta
-                $quantity = abs($newStock - $previousStock);
-                break;
+                case 'out':
+                    if ($previousStock < $quantity) {
+                        throw new DomainException("Stock insuficiente para el producto '{$lockedProduct->name}' (SKU: {$lockedProduct->sku}). Disponible: {$previousStock}, Solicitado: {$quantity}.");
+                    }
+                    $newStock = $previousStock - $quantity;
+                    break;
 
-            default:
-                throw new DomainException("Tipo de movimiento inválido: {$type}. Use 'in', 'out' o 'adjustment'.");
-        }
+                case 'adjustment':
+                    if ($quantity < 0) {
+                        throw new DomainException('El stock ajustado no puede ser un número negativo.');
+                    }
+                    $newStock = $quantity;
+                    // La cantidad registrada en el movimiento refleja la diferencia absoluta
+                    $quantity = abs($newStock - $previousStock);
+                    break;
 
-        // Persistir nuevo stock en el producto
-        $product->stock = $newStock;
-        $product->save();
+                default:
+                    throw new DomainException("Tipo de movimiento inválido: {$type}. Use 'in', 'out' o 'adjustment'.");
+            }
 
-        // Registrar auditoría inmutable
-        return InventoryMovement::create([
-            'product_id' => $product->id,
-            'user_id' => $user->id,
-            'type' => $type,
-            'quantity' => $quantity,
-            'previous_stock' => $previousStock,
-            'new_stock' => $newStock,
-            'reason' => $reason,
-            'reference_type' => $referenceType,
-            'reference_id' => $referenceId,
-        ]);
+            // Persistir nuevo stock en el registro bloqueado y sincronizar instancia en memoria
+            $lockedProduct->stock = $newStock;
+            $lockedProduct->save();
+            $product->stock = $newStock;
+
+            // Registrar auditoría inmutable
+            return InventoryMovement::create([
+                'product_id' => $lockedProduct->id,
+                'user_id' => $user->id,
+                'type' => $type,
+                'quantity' => $quantity,
+                'previous_stock' => $previousStock,
+                'new_stock' => $newStock,
+                'reason' => $reason,
+                'reference_type' => $referenceType,
+                'reference_id' => $referenceId,
+            ]);
+        });
     }
 }

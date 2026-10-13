@@ -23,7 +23,7 @@
                        class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                     <label for="contact_name" class="block text-xs font-bold text-slate-700 uppercase mb-1">Persona de Contacto</label>
                     <input type="text" id="contact_name" name="contact_name" value="{{ old('contact_name', $supplier->contact_name) }}"
@@ -31,9 +31,18 @@
                 </div>
 
                 <div>
-                    <label for="tax_id" class="block text-xs font-bold text-slate-700 uppercase mb-1">NIT / RIF / RUT Fiscal</label>
+                    <label for="document_type" class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo Documento</label>
+                    <select id="document_type" name="document_type"
+                            class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                        <option value="RUC" {{ old('document_type', $supplier->document_type ?? 'RUC') === 'RUC' ? 'selected' : '' }}>RUC (11 dígitos)</option>
+                        <option value="DNI" {{ old('document_type', $supplier->document_type) === 'DNI' ? 'selected' : '' }}>DNI (8 dígitos)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="tax_id" class="block text-xs font-bold text-slate-700 uppercase mb-1">N° RUC / Documento Fiscal</label>
                     <input type="text" id="tax_id" name="tax_id" value="{{ old('tax_id', $supplier->tax_id) }}"
-                           class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
+                           class="w-full px-3 py-2 rounded-md border border-slate-300 text-sm font-mono focus:ring-1 focus:ring-brand-500 focus:border-brand-500 outline-none">
                 </div>
             </div>
 

@@ -30,7 +30,7 @@
                 <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ventas de Hoy</span>
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
-            <h3 class="text-2xl font-bold text-slate-900 tabular-nums">${{ number_format($metrics['today_sales'], 2) }}</h3>
+            <h3 class="text-2xl font-bold text-slate-900 tabular-nums">S/ {{ number_format($metrics['today_sales'], 2) }}</h3>
             <p class="text-[11px] text-slate-500 mt-1 font-medium">{{ $metrics['today_sales_count'] }} {{ Str::plural('transacción', $metrics['today_sales_count']) }}</p>
         </div>
 
@@ -40,7 +40,7 @@
                 <span class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Ventas del Mes</span>
                 <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
             </div>
-            <h3 class="text-2xl font-bold text-slate-900 tabular-nums">${{ number_format($metrics['monthly_sales'], 2) }}</h3>
+            <h3 class="text-2xl font-bold text-slate-900 tabular-nums">S/ {{ number_format($metrics['monthly_sales'], 2) }}</h3>
             <p class="text-[11px] text-slate-500 mt-1 font-medium">{{ $metrics['monthly_sales_count'] }} órdenes en {{ \Carbon\Carbon::now()->translatedFormat('F') }}</p>
         </div>
 
@@ -74,7 +74,7 @@
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h3 class="text-sm font-bold text-slate-900">Evolución de Ventas (Últimos 7 días)</h3>
-                    <p class="text-xs text-slate-500">Monto total facturado por día</p>
+                    <p class="text-xs text-slate-500">Monto total recaudado en Soles (PEN) por día</p>
                 </div>
             </div>
 
@@ -90,7 +90,7 @@
                     @endphp
                     <div class="flex flex-col items-center group relative h-full justify-end">
                         <div class="text-[10px] font-mono tabular-nums font-bold text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity mb-1">
-                            ${{ number_format($day['total'], 0) }}
+                            S/ {{ number_format($day['total'], 0) }}
                         </div>
                         <div class="w-full bg-slate-100 rounded-t flex items-end h-32">
                             <div class="w-full bg-brand-800 hover:bg-brand-700 rounded-t transition-colors" style="height: {{ $pct }}%"></div>
@@ -119,7 +119,7 @@
                             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-mono font-semibold bg-slate-200 text-slate-800">
                                 {{ $top->total_quantity }} u.
                             </span>
-                            <span class="text-[11px] font-mono tabular-nums text-slate-600 block mt-0.5">${{ number_format($top->total_revenue, 2) }}</span>
+                            <span class="text-[11px] font-mono tabular-nums text-slate-600 block mt-0.5">S/ {{ number_format($top->total_revenue, 2) }}</span>
                         </div>
                     </div>
                     @empty
@@ -162,7 +162,7 @@
                                 <span class="text-[10px] text-slate-500 block">{{ $sale->created_at->diffForHumans() }}</span>
                             </td>
                             <td class="px-3 py-2.5 text-slate-700 truncate max-w-[130px]">{{ $sale->customer_name }}</td>
-                            <td class="px-3 py-2.5 text-right font-bold font-mono tabular-nums text-slate-900">${{ number_format($sale->total, 2) }}</td>
+                            <td class="px-3 py-2.5 text-right font-bold font-mono tabular-nums text-slate-900">S/ {{ number_format($sale->total, 2) }}</td>
                             <td class="px-3 py-2.5 text-right">
                                 <a href="{{ route('sales.show', $sale) }}" class="inline-flex items-center px-2 py-1 rounded text-slate-700 hover:bg-slate-100 border border-slate-200 text-[11px] font-medium transition-colors" aria-label="Ver ticket de la venta {{ $sale->sale_number }}">
                                     Ticket

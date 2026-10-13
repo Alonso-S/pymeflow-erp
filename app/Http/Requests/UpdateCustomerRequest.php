@@ -18,6 +18,7 @@ class UpdateCustomerRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:150'],
+            'document_type' => ['nullable', 'string', 'in:DNI,RUC,CE,PASAPORTE'],
             'tax_id' => ['nullable', 'string', 'max:30', Rule::unique('customers', 'tax_id')->ignore($customerId)],
             'email' => ['nullable', 'email', 'max:150'],
             'phone' => ['nullable', 'string', 'max:30'],

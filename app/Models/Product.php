@@ -18,6 +18,7 @@ class Product extends Model
         'name',
         'description',
         'sale_price',
+        'tax_type',
         'cost_price',
         'stock',
         'min_stock',

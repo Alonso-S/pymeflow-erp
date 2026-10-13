@@ -14,13 +14,16 @@ class StoreSaleRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'idempotency_key' => ['nullable', 'string', 'max:100'],
             'customer_id' => ['nullable', 'exists:customers,id'],
             'customer_name' => ['nullable', 'string', 'max:150'],
-            'payment_method' => ['required', 'string', 'in:efectivo,tarjeta,transferencia'],
+            'payment_method' => ['required', 'string', 'in:efectivo,tarjeta,transferencia,yape,plin'],
+            'prices_include_tax' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:500'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.discount_amount' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -28,13 +31,14 @@ class StoreSaleRequest extends FormRequest
     {
         return [
             'payment_method.required' => 'Seleccione un método de pago válido.',
-            'payment_method.in' => 'El método de pago debe ser efectivo, tarjeta o transferencia.',
+            'payment_method.in' => 'El método de pago debe ser efectivo, tarjeta, transferencia, Yape o Plin.',
             'items.required' => 'La venta debe contener al menos un producto.',
             'items.min' => 'Debe agregar al menos un producto al carrito de venta.',
             'items.*.product_id.required' => 'El identificador del producto es obligatorio.',
             'items.*.product_id.exists' => 'Uno de los productos seleccionados no existe en el catálogo.',
             'items.*.quantity.required' => 'La cantidad es obligatoria para cada producto.',
             'items.*.quantity.min' => 'La cantidad de cada producto debe ser de al menos 1 unidad.',
+            'items.*.discount_amount.min' => 'El descuento no puede ser negativo.',
         ];
     }
 }

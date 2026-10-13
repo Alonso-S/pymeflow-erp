@@ -67,10 +67,11 @@
                         <th class="px-4 py-3">SKU / Código</th>
                         <th class="px-4 py-3">Producto</th>
                         <th class="px-4 py-3">Categoría</th>
+                        <th class="px-4 py-3 text-center">Afectación IGV</th>
                         @if(auth()->user()->isAdmin())
-                        <th class="px-4 py-3 text-right">Costo</th>
+                        <th class="px-4 py-3 text-right">Costo (S/)</th>
                         @endif
-                        <th class="px-4 py-3 text-right">Precio Venta</th>
+                        <th class="px-4 py-3 text-right">Precio Venta (S/)</th>
                         <th class="px-4 py-3 text-center">Stock</th>
                         <th class="px-4 py-3 text-center">Estado</th>
                         @if(auth()->user()->isAdmin())
@@ -95,13 +96,29 @@
                                 {{ $product->category->name ?? 'Sin categoría' }}
                             </span>
                         </td>
+                        <td class="px-4 py-3 text-center">
+                            @php $taxType = $product->tax_type ?? 'gravado'; @endphp
+                            @if($taxType === 'gravado')
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-brand-50 text-brand-900 border border-brand-200">
+                                Gravado (18%)
+                            </span>
+                            @elseif($taxType === 'exonerado')
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+                                Exonerado (0%)
+                            </span>
+                            @else
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                Inafecto (0%)
+                            </span>
+                            @endif
+                        </td>
                         @if(auth()->user()->isAdmin())
                         <td class="px-4 py-3 text-right text-slate-600 font-mono tabular-nums">
-                            ${{ number_format($product->cost_price, 2) }}
+                            S/ {{ number_format($product->cost_price, 2) }}
                         </td>
                         @endif
                         <td class="px-4 py-3 text-right font-bold font-mono tabular-nums text-slate-900">
-                            ${{ number_format($product->sale_price, 2) }}
+                            S/ {{ number_format($product->sale_price, 2) }}
                         </td>
                         <td class="px-4 py-3 text-center">
                             @if($product->stock <= 0)

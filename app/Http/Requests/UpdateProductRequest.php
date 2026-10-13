@@ -23,6 +23,7 @@ class UpdateProductRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'cost_price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['required', 'numeric', 'min:0', 'gte:cost_price'],
+            'tax_type' => ['nullable', 'string', 'in:gravado,exonerado,inafecto'],
             'min_stock' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],
         ];

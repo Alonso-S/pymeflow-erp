@@ -82,18 +82,30 @@ class ReportService
     }
 
     /**
-     * Obtiene los productos con mayor volumen de unidades vendidas.
+     * Obtiene los productos con mayor volumen de unidades vendidas (únicamente ventas completadas).
      */
-    public function getTopSellingProducts(int $limit = 5)
+    public function getTopSellingProducts(int $limit = 5, ?string $startDate = null, ?string $endDate = null)
     {
-        return SaleItem::select(
-            'product_id',
-            'product_name',
-            'product_sku',
-            DB::raw('SUM(quantity) as total_quantity'),
-            DB::raw('SUM(subtotal) as total_revenue')
-        )
-            ->groupBy('product_id', 'product_name', 'product_sku')
+        $query = SaleItem::query()
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->where('sales.status', 'completed')
+            ->select(
+                'sale_items.product_id',
+                'sale_items.product_name',
+                'sale_items.product_sku',
+                DB::raw('SUM(sale_items.quantity) as total_quantity'),
+                DB::raw('SUM(sale_items.subtotal) as total_revenue')
+            );
+
+        if ($startDate) {
+            $query->whereDate('sales.created_at', '>=', $startDate);
+        }
+        if ($endDate) {
+            $query->whereDate('sales.created_at', '<=', $endDate);
+        }
+
+        return $query
+            ->groupBy('sale_items.product_id', 'sale_items.product_name', 'sale_items.product_sku')
             ->orderByDesc('total_quantity')
             ->limit($limit)
             ->get();

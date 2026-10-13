@@ -20,6 +20,7 @@ class StoreProductRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'cost_price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['required', 'numeric', 'min:0', 'gte:cost_price'],
+            'tax_type' => ['nullable', 'string', 'in:gravado,exonerado,inafecto'],
             'stock' => ['required', 'integer', 'min:0'],
             'min_stock' => ['required', 'integer', 'min:0'],
             'is_active' => ['boolean'],

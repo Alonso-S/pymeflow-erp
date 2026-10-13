@@ -1,312 +1,161 @@
-# 💼 PymeFlow ERP — Sistema de Gestión Empresarial para PYMEs
+# PymeFlow ERP — Sistema de Gestión Comercial e Inventario para PYMEs (Perú)
 
 [![PHP Version](https://img.shields.io/badge/PHP-8.2%20%7C%208.3-777bb4?logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel Framework](https://img.shields.io/badge/Laravel-11.x-ff2d20?logo=laravel&logoColor=white)](https://laravel.com/)
 [![Database](https://img.shields.io/badge/Database-MySQL%208.0%20%7C%20SQLite-00758f?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![PHPUnit Tests](https://img.shields.io/badge/Tests-27%20Passed%20%7C%20104%20Assertions-brightgreen?logo=phpunit&logoColor=white)](https://phpunit.de/)
+[![PHPUnit Tests](https://img.shields.io/badge/Tests-37%20Passed%20%7C%20176%20Assertions-brightgreen?logo=phpunit&logoColor=white)](https://phpunit.de/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**PymeFlow ERP** es una solución web Full Stack robusta, moderna y de nivel de producción diseñada para pequeñas y medianas empresas. Integra en un solo entorno el catálogo de productos con control de márgenes, auditoría inmutable de inventario, directorio de clientes y proveedores, punto de venta (POS) interactivo con transacciones atómicas seguras, dashboard con KPIs en tiempo real, exportación de reportes a CSV y una API RESTful v1 versionada protegida con Laravel Sanctum.
+**PymeFlow ERP** es una aplicación web Full Stack diseñada para pequeñas y medianas empresas comerciales en el **Perú**. Integra catálogo de productos con afectación tributaria (**Gravado 18%, Exonerado 0%, Inafecto 0%**), Kardex inmutable de inventario, órdenes de compra con recepción de mercadería en almacén, directorio de clientes y proveedores (**RUC / DNI / CE / Pasaporte**), punto de venta (POS) interactivo en **Soles (`S/` / `PEN`)**, anulación de ventas con reversión protegida de stock, reportes gerenciales y una API RESTful v1 autenticada con Laravel Sanctum.
+
+> **Alcance Fiscal Transparente**: PymeFlow ERP gestiona la lógica comercial y el desglose tributario peruano (**IGV 18%**, operaciones gravadas, exoneradas e inafectas) emitiendo **Comprobantes Internos de Venta y Órdenes de Compra**. El sistema **no** declara integración directa con OSE/SUNAT, firma digital XML UBL 2.1 ni emisión de Comprobantes de Pago Electrónicos (CPE) oficiales.
 
 ---
 
-## 🏛️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
-El sistema implementa una arquitectura por capas desacoplada siguiendo principios **SOLID**, **Clean Code** y el patrón **Service Layer** sobre el framework Laravel:
+El sistema implementa una arquitectura por capas desacoplada siguiendo el patrón **Service Layer** sobre Laravel 11:
 
 ```mermaid
 graph TD
-    User([Usuario / Navegador]) -->|HTTP / Blade| WebRoutes[Rutas Web]
-    ApiClient([Cliente API / Móvil]) -->|Bearer Token / JSON| ApiRoutes[Rutas API v1]
+    User([Operador / Navegador]) -->|HTTP / Blade| WebRoutes[Rutas Web]
+    ApiClient([Cliente API / POS Móvil]) -->|Bearer Token / JSON| ApiRoutes[Rutas API v1]
 
     subgraph Capa de Seguridad y Autorización
         WebRoutes --> WebAuth[Middleware Authenticate]
         ApiRoutes --> SanctumAuth[Middleware Sanctum]
-        WebAuth --> RoleMiddleware{Control de Acceso por Roles}
+        WebAuth --> RoleMiddleware{Control de Acceso por Rol}
         SanctumAuth --> RoleMiddleware
         RoleMiddleware -->|admin / seller| Controllers[Controladores Web & API]
     end
 
     subgraph Capa de Validación
-        Controllers --> FormRequests[Form Requests: Validación Estricta de Entradas]
+        Controllers --> FormRequests[Form Requests: Validación de Entradas]
     end
 
-    subgraph Capa de Servicios y Dominio
-        FormRequests --> SaleService[SaleService: Transacciones y Bloqueo Pesimista]
-        FormRequests --> InventoryService[InventoryService: Auditoría Inmutable de Stock]
+    subgraph Capa de Servicios de Dominio
+        FormRequests --> TaxService[TaxService: Cálculo IGV 18% e Invariantes Contables]
+        FormRequests --> SaleService[SaleService: Ventas, Idempotencia y Anulaciones]
+        FormRequests --> PurchaseService[PurchaseService: Órdenes de Compra y Recepción]
+        FormRequests --> InventoryService[InventoryService: Kardex Inmutable con Bloqueo Pesimista]
         FormRequests --> ReportService[ReportService: Analítica y Exportación CSV]
     end
 
-    subgraph Capa de Persistencia y Datos
-        SaleService --> ProductModel[Product: lockForUpdate]
-        SaleService --> SaleModel[Sale & SaleItem]
-        InventoryService --> InvMovementModel[InventoryMovement]
-        ProductModel --> Database[(MySQL 8.0 / SQLite)]
-        SaleModel --> Database
-        InvMovementModel --> Database
+    subgraph Capa de Persistencia
+        SaleService --> TaxService
+        SaleService --> InventoryService
+        PurchaseService --> TaxService
+        PurchaseService --> InventoryService
+        InventoryService --> Database[(MySQL 8.0 / SQLite)]
     end
 ```
 
-### Principales Decisiones de Arquitectura:
-1. **Transacciones Atómicas y Bloqueo Pesimista (`lockForUpdate`)**: El procesamiento de ventas en `SaleService` adquiere bloqueos pesimistas sobre los registros de productos en la base de datos para prevenir condiciones de carrera (*race conditions*) y sobreventas en entornos de alta concurrencia.
-2. **Cálculo Estricto en el Servidor**: El servidor ignora deliberadamente precios o subtotales enviados desde el navegador; todos los valores monetarios se extraen de la base de datos y se calculan en el backend con redondeos financieros seguros.
-3. **Auditoría Inmutable de Stock**: Los usuarios no pueden modificar directamente la columna `stock` de los productos. Toda alteración de existencias pasa por `InventoryService`, generando un registro histórico inmutable con stock previo, variación, nuevo stock, motivo y usuario responsable.
-4. **Protección Multicapa por Rol**: Control de autorización estricto mediante middleware `EnsureUserHasRole` tanto en interfaz web como en endpoints API, impidiendo que un vendedor acceda a finanzas o configuración manipulando URLs o peticiones HTTP.
+### Decisiones Técnicas Defendibles en Entrevista:
+1. **Motor Tributario Peruano Centralizado (`TaxService`)**:
+   - Soporta moneda **Sol Peruano (`PEN` / `S/`)** y tasa general de **IGV (18%)** configurable en `config/erp.php`.
+   - Soporta las 3 afectaciones de uso común en PYMEs peruanas: **`gravado`** (18%), **`exonerado`** (0%) e **`inafecto`** (0%).
+   - Soporta tanto **precios con IGV incluido** (`prices_include_tax = true`, estándar minorista en Perú: `Base = round(Total / 1.18, 2)`, `IGV = Total - Base`) como **precios más IGV** (`prices_include_tax = false`: `IGV = round(Base * 0.18, 2)`, `Total = Base + IGV`).
+   - Garantiza la invariante contable estricta en cada línea y cabecera: `tax_base + tax_amount == line_total` y `subtotal + tax == total` usando redondeo `PHP_ROUND_HALF_UP` a 2 decimales.
+   - Guarda una **instantánea histórica (`snapshot`)** de `tax_type`, `tax_rate`, `unit_value`, `tax_base`, `tax_amount` y `line_total` en `sale_items` y `purchase_items`, de modo que cambios futuros de precios o tasas no alteren comprobantes históricos.
+2. **Transacciones Atómicas, Ordenamiento de Bloqueos (`lockForUpdate`) e Idempotencia**:
+   - `SaleService` e `InventoryService` ejecutan cada operación dentro de `DB::transaction()`.
+   - Antes de bloquear filas con `Product::whereIn('id', $ids)->orderBy('id')->lockForUpdate()`, los IDs de productos se ordenan ascendentemente para **prevenir interbloqueos (*deadlocks*)** en ventas concurrentes con múltiples ítems.
+   - Soporta clave de idempotencia (`idempotency_key`) para evitar ventas duplicadas ante doble clic en el POS o reintentos de red en la API.
+3. **Anulación de Ventas con Protección contra Doble Reversión (`cancelSale`)**:
+   - Permite a un administrador anular una venta completada registrando motivo obligatorio, usuario y fecha/hora (`cancelled_at`, `cancelled_by`, `cancellation_reason`).
+   - Revierte automáticamente las unidades al almacén generando un movimiento en el Kardex con `reference_type = 'SaleCancellation'` y bloquea la venta con `lockForUpdate()` para impedir que una segunda solicitud duplique la devolución de stock.
+4. **Separación entre Orden de Compra y Recepción de Mercadería (`PurchaseService`)**:
+   - Una orden de compra creada en estado `ordered` (**Pendiente de Recepción**) registra el compromiso con el proveedor pero **no altera el stock físico**.
+   - Solo al confirmar la recepción física (`receivePurchase` -> estado `received`) se incrementa el stock en el Kardex (`reference_type = 'Purchase'`) y se actualiza el costo unitario del producto.
+5. **Seeders 100% Idempotentes**:
+   - `DatabaseSeeder` utiliza `updateOrCreate` e invoca `SaleService` y `PurchaseService` con claves determinísticas, permitiendo ejecutar `php artisan db:seed` repetidamente sin duplicar ventas, compras ni inflar artificialmente el inventario.
 
 ---
 
-## ✨ Funcionalidades Principales
+## Ejemplo Numérico del Cálculo Tributario (`TaxService`)
 
-### 1. 📊 Dashboard Analítico en Tiempo Real
-* **KPIs calculados al instante**: Ventas del día, ventas del mes, productos activos y alertas de stock bajo.
-* **Gráfico dinámico**: Evolución de ventas de los últimos 7 días.
-* **Alertas de stock crítico**: Detección automática de artículos que alcanzaron su umbral mínimo.
-* **Top de productos**: Ranking por volumen de unidades vendidas y recaudación.
-
-### 2. 🛒 Punto de Venta (POS) Interactivo
-* Carrito de compras interactivo con validación visual de stock máximo en tiempo real.
-* Selección de cliente frecuente o registro de venta a **Cliente Ocasional**.
-* Múltiples medios de pago: Efectivo, Tarjeta y Transferencia.
-* Emisión inmediata de **Comprobante Interno de Venta (Ticket)** con vista de impresión optimizada (`@media print`).
-
-### 3. 📦 Catálogo de Productos y Categorías
-* Código **SKU único e indexado**.
-* Validación de margen comercial (el precio de venta no puede ser inferior al costo).
-* Control de stock actual y stock mínimo para alertas tempranas.
-* Integridad referencial: Bloqueo de eliminación para categorías con productos asociados.
-
-### 4. 📋 Auditoría y Movimientos de Inventario
-* Tipos de movimiento: **Entradas (+)**, **Salidas (-)** y **Ajustes Físicos**.
-* Prevención estricta de stock negativo.
-* Historial con trazabilidad completa: fecha, producto, usuario responsable y justificación.
-
-### 5. 👥 Clientes y Proveedores
-* Directorio comercial con búsqueda por nombre, identificación fiscal (DNI, RUT, RFC), correo o teléfono.
-* Historial de órdenes de compra vinculadas a cada cliente.
-
-### 6. 📈 Reportes y Exportación CSV
-* Filtro de ventas por rango de fechas y clientes.
-* Exportación de **Reporte de Ventas en CSV** compatible con Excel (BOM UTF-8).
-* Exportación de **Reporte de Inventario y Valoración de Stock en CSV**.
-
-### 7. 🔌 API RESTful v1 (`/api/v1`)
-* Autenticación basada en tokens personales con **Laravel Sanctum**.
-* Endpoints para productos, clientes, ventas, inventario y métricas.
-* Respuestas JSON normalizadas con códigos HTTP semánticos (`200`, `201`, `401`, `403`, `404`, `422`).
+Supongamos una venta mixta con **precios que incluyen IGV (`prices_include_tax = true`)**:
+- **Ítem 1 (Gravado 18%)**: 2 unidades de *Monitor LED 24"* a precio de catálogo `S/ 118.00` c/u:
+  - Total línea (`line_total`): `2 × S/ 118.00 = S/ 236.00`
+  - Base imponible (`tax_base`): `round(236.00 / 1.18, 2) = S/ 200.00`
+  - IGV 18% (`tax_amount`): `236.00 - 200.00 = S/ 36.00`
+- **Ítem 2 (Exonerado 0%)**: 2 unidades de *Manual Contable Tributario* a `S/ 50.00` c/u:
+  - Total línea (`line_total`): `2 × S/ 50.00 = S/ 100.00`
+  - Base exonerada (`tax_base`): `S/ 100.00`
+  - IGV (`tax_amount`): `S/ 0.00`
+- **Resumen en Cabecera (`Sale`)**:
+  - `taxable_amount` (Op. Gravada): `S/ 200.00`
+  - `exempt_amount` (Op. Exonerada): `S/ 100.00`
+  - `subtotal` (Valor Venta sin IGV): `S/ 300.00`
+  - `tax` (IGV 18%): `S/ 36.00`
+  - `total` (Importe Total): `S/ 336.00` (`300.00 + 36.00 = 336.00`)
 
 ---
 
-## 🛠️ Stack Tecnológico
-
-| Capa | Tecnología | Propósito |
-| :--- | :--- | :--- |
-| **Backend** | PHP 8.2 / 8.3 | Lenguaje de servidor con tipado estricto |
-| **Framework** | Laravel 11.x | Arquitectura MVC, Eloquent ORM, Validaciones |
-| **Seguridad** | Laravel Sanctum | Autenticación basada en Bearer Tokens para API |
-| **Frontend** | Blade + Tailwind CSS 3.4 | Vistas responsivas con diseño SaaS profesional |
-| **Compilador** | Vite 5.x | Compilación y optimización de recursos frontend |
-| **Bases de Datos** | MySQL 8.0 & SQLite | Motor relacional con soporte dual |
-| **Pruebas** | PHPUnit 10.x | Pruebas de integración, validación y transacciones |
-| **Contenedores** | Docker Compose | Entorno reproducible con Nginx, PHP y MySQL |
-
----
-
-## 🚀 Instalación y Puesta en Marcha
+## Instalación y Puesta en Marcha
 
 ### Requisitos Previos
-* PHP 8.2 o superior con extensiones `pdo`, `mbstring`, `openssl`, `curl`.
+* PHP 8.2 o superior
 * Composer 2.x
 * Node.js 18+ y npm
-* MySQL 8.0 (opcional, SQLite soportado por defecto sin configuración)
+* MySQL 8.0 o SQLite
 
----
-
-### Opción A: Ejecución Local Rápida (Recomendada)
-
-1. **Clonar el repositorio**:
-   ```bash
-   git clone https://github.com/tu-usuario/pymeflow-erp.git
-   cd pymeflow-erp
-   ```
-
-2. **Instalar dependencias de PHP y Node**:
-   ```bash
-   composer install
-   npm install
-   ```
-
-3. **Configurar el entorno**:
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
-
-4. **Ejecutar migraciones y cargar datos de demostración**:
-   ```bash
-   php artisan migrate:fresh --seed
-   ```
-
-5. **Compilar recursos frontend**:
-   ```bash
-   npm run build
-   ```
-
-6. **Iniciar el servidor de desarrollo**:
-   ```bash
-   php artisan serve
-   ```
-   Accede en tu navegador a: **`http://127.0.0.1:8000`**
-
----
-
-### Opción B: Ejecución con Docker Compose
-
-El proyecto incluye configuración completa de Docker con Nginx, PHP 8.2-FPM y MySQL 8.0:
-
+### Ejecución Local
 ```bash
-# 1. Levantar los contenedores
-docker compose up -d --build
+# 1. Instalar dependencias
+composer install
+npm install
 
-# 2. Ejecutar migraciones con seeders en el contenedor
-docker compose exec app php artisan migrate:fresh --seed
+# 2. Configurar variables de entorno
+cp .env.example .env
+php artisan key:generate
 
-# 3. Compilar frontend (si es necesario)
-docker compose exec app npm run build
+# 3. Ejecutar migraciones y datos de demostración (Perú)
+php artisan migrate:fresh --seed
+
+# 4. Compilar assets frontend (Vite + Tailwind CSS)
+npm run build
+
+# 5. Iniciar servidor local
+php artisan serve
 ```
 
-* **Aplicación Web**: `http://localhost:8000`
-* **phpMyAdmin**: `http://localhost:8080` (Usuario: `root`, Contraseña: `root`)
-
 ---
 
-## 🔑 Credenciales de Demostración
-
-Para explorar los distintos roles del sistema, se incluyen usuarios precargados en el seeder:
+## Credenciales de Demostración
 
 | Rol | Correo Electrónico | Contraseña | Permisos |
 | :--- | :--- | :--- | :--- |
-| **Administrador** | `admin@pymeflow.com` | `password` | **Acceso Total**: Catálogo, Precios, Categorías, Proveedores, Reportes, Ajustes de Stock |
-| **Vendedora** | `vendedor@pymeflow.com` | `password` | **Comercial**: Dashboard, Punto de Venta (POS), Historial de Ventas, Clientes, Catálogo (Lectura) |
-
-> 💡 *En la pantalla de inicio de sesión (`/login`) encontrarás botones de acceso rápido que rellenan automáticamente estas credenciales para facilitar la evaluación.*
+| **Administrador** | `admin@pymeflow.com` | `password` | **Acceso Total**: Catálogo, Categorías, Proveedores, Órdenes de Compra, Recepción de Mercadería, Kardex, Anulación de Ventas y Reportes |
+| **Vendedora** | `vendedor@pymeflow.com` | `password` | **Operación Comercial**: Dashboard, Punto de Venta (POS), Historial de Ventas, Clientes y Consulta de Catálogo |
 
 ---
 
-## 🧪 Pruebas Automatizadas
+## Suite de Pruebas Automatizadas (PHPUnit)
 
-El proyecto cuenta con una suite de pruebas exhaustiva que valida los flujos críticos del negocio:
+Ejecuta la suite completa con:
 
 ```bash
 php artisan test
 ```
 
-### Resultados de la Suite de Pruebas:
-```text
-   PASS  Tests\Unit\ExampleTest
-  ✓ that true is true
-
-   PASS  Tests\Feature\AuthTest
-  ✓ unauthenticated user is redirected from dashboard
-  ✓ user can view login screen
-  ✓ user can authenticate with valid credentials
-  ✓ user cannot authenticate with invalid password
-  ✓ inactive user cannot authenticate
-
-   PASS  Tests\Feature\AuthorizationTest
-  ✓ seller cannot access categories management
-  ✓ seller cannot access suppliers management
-  ✓ seller cannot access manual inventory adjustments
-  ✓ seller cannot access financial reports
-  ✓ seller can access dashboard and pos
-  ✓ admin has full access to all modules
-
-   PASS  Tests\Feature\ProductValidationTest
-  ✓ duplicate sku is rejected
-  ✓ sale price cannot be less than cost price
-  ✓ valid product creation audits initial stock
-
-   PASS  Tests\Feature\SaleTransactionTest
-  ✓ valid sale registers sale header items and decrements stock
-  ✓ sale with insufficient stock is rejected
-  ✓ failed sale rolls back entire transaction atomically
-  ✓ server calculates totals ignoring tampered client data
-
-   PASS  Tests\Feature\ApiV1Test
-  ✓ unauthenticated request is rejected
-  ✓ api login returns sanctum token
-  ✓ authenticated user can list products
-  ✓ seller cannot create products via api
-  ✓ admin can create product via api
-  ✓ create sale via api v1 decrements stock
-  ✓ dashboard metrics endpoint returns data
-
-  Tests:    27 passed (104 assertions)
-  Duration: 1.50s
-```
+### Cobertura Actual (`37 passed, 176 assertions`):
+- **`PeruTaxAndSaleIntegrityTest`**:
+  - Venta con productos gravados e IGV incluido (`18%`).
+  - Venta con productos gravados e IGV excluido (`+18%`).
+  - Venta mixta con productos `gravado`, `exonerado` e `inafecto`.
+  - Redondeo financiero multi-ítem preservando la invariante `subtotal + tax == total`.
+  - Protección contra manipulación de precios desde el cliente (`unit_price` alterado en el request es ignorado por el servidor).
+  - Prevención de ventas duplicadas mediante `idempotency_key`.
+  - Anulación de venta con retorno de stock al Kardex y bloqueo de doble anulación.
+- **`PurchaseAndSeederTest`**:
+  - Separación entre orden de compra (`ordered`) y recepción de mercadería (`received`), verificando que el stock solo sube al recepcionar y bloqueando doble recepción.
+  - Idempotencia de `DatabaseSeeder` al ejecutar `db:seed` múltiples veces seguidas.
+  - Restricciones de autorización por rol (`seller` recibe `403 Forbidden` al intentar anular ventas o acceder a compras).
+- **`SaleTransactionTest`**, **`ProductValidationTest`**, **`AuthorizationTest`**, **`AuthTest`**, **`ApiV1Test`**.
 
 ---
 
-## 📡 Documentación de la API RESTful (`/api/v1`)
-
-Todos los endpoints (excepto el login) requieren el encabezado `Authorization: Bearer <TOKEN>`.
-
-### 1. Autenticación
-* **POST `/api/v1/auth/login`**:
-  ```json
-  {
-    "email": "admin@pymeflow.com",
-    "password": "password"
-  }
-  ```
-  **Respuesta (200 OK)**:
-  ```json
-  {
-    "success": true,
-    "message": "Autenticación exitosa.",
-    "data": {
-      "user": { "id": 1, "name": "Carlos Mendoza", "role": "admin" },
-      "token": "1|qXy...78z",
-      "token_type": "Bearer"
-    }
-  }
-  ```
-
-### 2. Catálogo de Productos
-* **GET `/api/v1/products`**: Lista paginada con filtros `search`, `category_id` y `low_stock`.
-* **GET `/api/v1/products/{id}`**: Detalle de producto con su categoría.
-* **POST `/api/v1/products`** *(Admin)*: Crear producto con auditoría de inventario inicial.
-* **PUT `/api/v1/products/{id}`** *(Admin)*: Actualizar producto.
-
-### 3. Registro de Ventas
-* **POST `/api/v1/sales`**:
-  ```json
-  {
-    "customer_id": 1,
-    "payment_method": "efectivo",
-    "items": [
-      { "product_id": 1, "quantity": 2 },
-      { "product_id": 2, "quantity": 1 }
-    ]
-  }
-  ```
-  **Respuesta (201 Created)**: Retorna la venta con consecutivo generado (`VEN-YYYYMM-XXXX`), cálculo de totales e inventario descontado.
-
-### 4. Analítica y Métricas
-* **GET `/api/v1/dashboard/metrics`**: Indicadores consolidados del dashboard y evolución semanal.
-
----
-
-## 🎯 Puntos Clave para Presentar en una Entrevista Técnica
-
-Si utilizas este proyecto para una entrevista técnica de desarrollo Full Stack o Backend:
-1. **Transaccionalidad en Ventas**: Destaca cómo se utilizó `DB::transaction()` junto a `Product::lockForUpdate()` para garantizar que dos cajeros no puedan vender la última unidad al mismo tiempo.
-2. **Cálculo Seguro en Servidor**: Explica que el cliente web o móvil solo envía `product_id` y `quantity`. El servidor busca los precios vigentes en la base de datos para prevenir alteraciones maliciosas.
-3. **Auditoría Inmutable**: Resalta que no existe un `UPDATE stock = X` libre. Cualquier modificación genera un `InventoryMovement` auditable.
-4. **Separación de Responsabilidades**: Menciona la división limpia entre Form Requests (validación), Controladores (orquestación HTTP) y Servicios de Dominio (lógica de negocio).
-5. **Cobertura con Pruebas**: Demuestra cómo los 27 tests automatizados verifican desde permisos 403 hasta rollbacks transaccionales.
-
----
-
-## 📄 Licencia
-Este proyecto es de código abierto y está disponible bajo la licencia [MIT](LICENSE).
+## Licencia
+Este proyecto está disponible bajo la licencia [MIT](LICENSE).

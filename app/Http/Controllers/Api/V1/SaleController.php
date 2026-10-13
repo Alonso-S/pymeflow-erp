@@ -85,4 +85,40 @@ class SaleController extends Controller
             ], 500);
         }
     }
+
+    public function cancel(Request $request, int $id): JsonResponse
+    {
+        $sale = Sale::find($id);
+        if (!$sale) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Venta no encontrada.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ], [
+            'reason.required' => 'Debe indicar el motivo de la anulación interna.',
+        ]);
+
+        try {
+            $cancelledSale = $this->saleService->cancelSale(
+                sale: $sale,
+                user: $request->user(),
+                reason: $validated['reason']
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta anulada internamente y stock restituido con éxito.',
+                'data' => $cancelledSale,
+            ], 200);
+        } catch (DomainException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
 }

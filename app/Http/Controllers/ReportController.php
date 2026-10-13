@@ -26,16 +26,18 @@ class ReportController extends Controller
             ->whereDate('created_at', '<=', $endDate);
 
         $salesTotal = (float) $salesQuery->sum('total');
+        $salesTaxTotal = (float) (clone $salesQuery)->sum('tax');
         $salesCount = $salesQuery->count();
         $averageTicket = $salesCount > 0 ? round($salesTotal / $salesCount, 2) : 0;
 
-        $topProducts = $this->reportService->getTopSellingProducts(8);
+        $topProducts = $this->reportService->getTopSellingProducts(8, $startDate, $endDate);
         $lowStockProducts = Product::active()->lowStock()->with('category')->get();
 
         return view('reports.index', compact(
             'startDate',
             'endDate',
             'salesTotal',
+            'salesTaxTotal',
             'salesCount',
             'averageTicket',
             'topProducts',

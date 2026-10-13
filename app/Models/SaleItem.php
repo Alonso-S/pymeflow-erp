@@ -15,19 +15,32 @@ class SaleItem extends Model
         'product_id',
         'product_name',
         'product_sku',
+        'tax_type',
+        'tax_rate',
         'quantity',
+        'unit_value',
         'unit_price',
         'cost_price',
+        'discount_amount',
+        'tax_base',
+        'tax_amount',
         'subtotal',
+        'line_total',
     ];
 
     protected function casts(): array
     {
         return [
             'quantity' => 'integer',
+            'tax_rate' => 'decimal:2',
+            'unit_value' => 'decimal:4',
             'unit_price' => 'decimal:2',
             'cost_price' => 'decimal:2',
+            'discount_amount' => 'decimal:2',
+            'tax_base' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'line_total' => 'decimal:2',
         ];
     }
 

@@ -19,6 +19,7 @@ class UpdateSupplierRequest extends FormRequest
         return [
             'company_name' => ['required', 'string', 'max:150'],
             'contact_name' => ['nullable', 'string', 'max:100'],
+            'document_type' => ['nullable', 'string', 'in:DNI,RUC,CE,PASAPORTE'],
             'tax_id' => ['nullable', 'string', 'max:30', Rule::unique('suppliers', 'tax_id')->ignore($supplierId)],
             'email' => ['nullable', 'email', 'max:150'],
             'phone' => ['nullable', 'string', 'max:30'],

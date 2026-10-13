@@ -53,7 +53,11 @@
                             {{ $customer->name }}
                         </td>
                         <td class="px-4 py-3 font-mono text-slate-600">
-                            {{ $customer->tax_id ?? 'Sin documento' }}
+                            @if($customer->tax_id)
+                                <span class="text-[10px] font-sans font-bold text-slate-500 mr-1">{{ $customer->document_type ?? 'DOC' }}:</span>{{ $customer->tax_id }}
+                            @else
+                                Sin documento
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             <span class="text-slate-800 block">{{ $customer->phone ?? 'Sin teléfono' }}</span>
